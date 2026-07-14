@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Setec Agro — Lista de Preços</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+:root{--ink:#12211a;--paper:#f6f4ec;--card:#fff;--leaf:#2f6b4f;--leaf-dark:#1f4a37;--leaf-soft:#e5efe7;--gold:#c8952b;--gold-soft:#f6ecd4;--line:#e2ddce;--muted:#6d7a6f;--danger:#c0392b}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--paper);color:var(--ink);line-height:1.4;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1280px;margin:0 auto;padding:0 20px}
+header{background:linear-gradient(150deg,var(--leaf-dark),var(--leaf));color:#fff;padding:28px 0 24px}
+.head-top{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:14px}
+.logo{width:52px;height:52px;border-radius:12px;background:rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:20px;border:1px solid rgba(255,255,255,.25)}
+.brand h1{font-size:22px;font-weight:700}
+.brand .sub{font-size:12.5px;opacity:.82;font-weight:500;letter-spacing:.5px;text-transform:uppercase}
+.season{text-align:right}.season .safra{font-size:26px;font-weight:800}.season .lbl{font-size:11px;opacity:.8;text-transform:uppercase;letter-spacing:2px}
+.tabs{display:flex;gap:4px;margin-top:22px;border-bottom:1px solid rgba(255,255,255,.2)}
+.tab{background:none;border:0;color:rgba(255,255,255,.7);padding:10px 20px;font-size:14px;font-weight:600;cursor:pointer;border-bottom:3px solid transparent;font-family:inherit}
+.tab:hover{color:#fff}.tab.on{color:#fff;border-bottom-color:var(--gold)}
+.controls{position:sticky;top:0;z-index:20;background:var(--paper);border-bottom:1px solid var(--line);padding:14px 0}
+.ctrl-row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.search{flex:1;min-width:200px;position:relative}
+.search input{width:100%;padding:11px 14px 11px 40px;border:1.5px solid var(--line);border-radius:10px;font-size:14.5px;background:#fff;outline:none}
+.search input:focus{border-color:var(--leaf)}
+.search svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);opacity:.4}
+select{padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;background:#fff;color:var(--ink);outline:none;cursor:pointer;min-width:140px;font-family:inherit}
+select:focus{border-color:var(--leaf)}
+.pagsel{border-color:var(--gold)!important;background:var(--gold-soft)!important;font-weight:700}
+.view-toggle{display:flex;border:1.5px solid var(--line);border-radius:10px;overflow:hidden}
+.view-toggle button{border:0;background:#fff;padding:10px 14px;font-size:13px;cursor:pointer;color:var(--muted);font-weight:600}
+.view-toggle button.on{background:var(--leaf);color:#fff}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.chip{padding:6px 13px;border-radius:20px;font-size:12.5px;font-weight:600;border:1.5px solid var(--line);background:#fff;color:var(--muted);cursor:pointer}
+.chip.on{background:var(--leaf);color:#fff;border-color:var(--leaf)}
+.chip.esp.on{background:var(--gold);border-color:var(--gold)}
+main{padding:22px 0 60px}
+.pagbar{background:var(--gold-soft);border:1px solid #e8d8b0;border-radius:10px;padding:10px 14px;font-size:13px;font-weight:600;color:#7a5f16;margin-bottom:14px}
+.count-line{font-size:13px;color:var(--muted);margin-bottom:16px;font-weight:500}.count-line b{color:var(--ink)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+.pcard{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.pcard:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(31,74,55,.09)}
+.pc-top{display:flex;justify-content:space-between;gap:10px}
+.pc-fab{font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--leaf);background:var(--leaf-soft);padding:3px 9px;border-radius:6px}
+.pc-cat{font-size:9.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
+.pc-name{font-size:16px;font-weight:700;line-height:1.25}
+.pc-ia{font-size:12.5px;color:var(--muted);font-style:italic}
+.pc-price-row{display:flex;align-items:baseline;justify-content:space-between;margin-top:auto;padding-top:10px;border-top:1px dashed var(--line);min-height:33px}
+.pc-price{font-size:22px;font-weight:800;color:var(--leaf-dark)}
+.pc-price .cur{font-size:13px;font-weight:600;color:var(--muted);margin-right:2px}
+.tbl-wrap{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+thead th{background:var(--leaf-dark);color:#fff;text-align:left;padding:11px 14px;font-size:11.5px;text-transform:uppercase;font-weight:700;cursor:pointer;white-space:nowrap}
+tbody td{padding:10px 14px;border-bottom:1px solid var(--line)}
+tbody tr:hover{background:var(--leaf-soft)}
+.t-fab{font-weight:700;color:var(--leaf);font-size:11.5px}
+.t-name{font-weight:600}.t-ia{color:var(--muted);font-size:12.5px}
+.t-price{font-weight:800;color:var(--leaf-dark);text-align:right;white-space:nowrap}
+.t-price .cur{font-size:11px;color:var(--muted);font-weight:600}
+.empty{text-align:center;padding:60px 20px;color:var(--muted)}
+.panel{display:none}.panel.on{display:block}
+.section-title{font-size:16px;font-weight:800;color:var(--leaf-dark);margin:0 0 6px}
+.section-sub{font-size:13px;color:var(--muted);margin-bottom:16px}
+.box{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:22px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.box label{font-weight:700;font-size:14px}
+.pct{position:relative;display:inline-flex;align-items:center}
+.pct input{width:86px;padding:8px 24px 8px 10px;border:1.5px solid var(--line);border-radius:9px;font-size:14px;font-weight:700;text-align:right;outline:none;font-family:inherit}
+.pct input:focus{border-color:var(--leaf);background:var(--leaf-soft)}
+.pct span{position:absolute;right:9px;color:var(--muted);font-size:12px;font-weight:600;pointer-events:none}
+.btn{display:inline-flex;align-items:center;gap:7px;background:var(--leaf);color:#fff;padding:10px 20px;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer;border:0;font-family:inherit}
+.btn:hover{background:var(--leaf-dark)}
+.btn.ghost{background:#fff;color:var(--muted);border:1.5px solid var(--line)}
+.btn.ghost:hover{background:var(--paper);color:var(--ink)}
+.hint{font-size:12.5px;color:var(--muted)}
+.mg-tbl-wrap{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;max-height:500px;overflow-y:auto;margin-bottom:26px}
+table.mg{width:100%;border-collapse:collapse;font-size:13.5px}
+table.mg thead th{position:sticky;top:0;background:var(--leaf-dark);color:#fff;padding:11px 14px;font-size:11.5px;text-transform:uppercase;z-index:2;cursor:default}
+table.mg td{padding:9px 14px;border-bottom:1px solid var(--line)}
+table.mg tbody tr:hover{background:var(--leaf-soft)}
+.venc-input{width:88px;padding:6px 8px;border:1.5px solid var(--line);border-radius:8px;font-size:13px;font-weight:600;text-align:center;outline:none;font-family:inherit}
+.venc-input:focus{border-color:var(--leaf);background:var(--leaf-soft)}
+.venc-input.bad{border-color:var(--danger);background:#fbe6e0}
+.calc{font-weight:800;color:var(--leaf-dark);text-align:right;white-space:nowrap}
+.badge-custom{font-size:10px;font-weight:700;color:var(--gold);background:var(--gold-soft);padding:2px 7px;border-radius:5px;margin-left:6px}
+.reset-mg{background:none;border:0;color:var(--muted);cursor:pointer;font-size:12px;text-decoration:underline}
+.reset-mg:hover{color:var(--danger)}
+.note{font-size:12.5px;color:var(--muted);background:var(--gold-soft);border:1px solid #e8d8b0;border-radius:10px;padding:14px 16px;line-height:1.5;margin-bottom:20px}
+.note b{color:var(--ink)}
+footer{border-top:1px solid var(--line);padding:20px 0;text-align:center;font-size:12px;color:var(--muted)}
+/* cotação */
+.cot-head{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:24px}
+.cot-field{display:flex;flex-direction:column;gap:6px}
+.cot-field label{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.cot-field input,.cot-field select{padding:10px 12px;border:1.5px solid var(--line);border-radius:9px;font-size:14px;outline:none;font-family:inherit;background:#fff;color:var(--ink)}
+.cot-field input:focus,.cot-field select:focus{border-color:var(--leaf)}
+.cot-field input[readonly]{background:var(--paper);color:var(--muted)}
+.cot-add{display:flex;gap:12px;margin-bottom:10px}
+.cot-sug{background:#fff;border:1px solid var(--line);border-radius:12px;max-height:260px;overflow-y:auto;display:none}
+.cot-sug.on{display:block}
+.sug-item{padding:11px 14px;border-bottom:1px solid var(--line);cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.sug-item:last-child{border-bottom:0}
+.sug-item:hover{background:var(--leaf-soft)}
+.sug-nome{font-weight:600;font-size:14px}
+.sug-fab{font-size:11px;font-weight:700;color:var(--leaf);text-transform:uppercase}
+.sug-preco{font-weight:800;color:var(--leaf-dark);white-space:nowrap}
+.sug-vazio{padding:16px;text-align:center;color:var(--muted);font-size:13.5px}
+.cot-tbl-wrap{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-bottom:16px}
+table.cot{width:100%;border-collapse:collapse;font-size:13.5px}
+table.cot thead th{background:var(--leaf-dark);color:#fff;text-align:left;padding:11px 14px;font-size:11.5px;text-transform:uppercase;font-weight:700}
+table.cot td{padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:middle}
+table.cot tbody tr:last-child td{border-bottom:0}
+.cot-nome{font-weight:600}
+.cot-fabinfo{font-size:11px;color:var(--leaf);font-weight:700;text-transform:uppercase}
+.qtd-input{width:70px;padding:7px 8px;border:1.5px solid var(--line);border-radius:8px;font-size:13.5px;font-weight:700;text-align:center;outline:none;font-family:inherit}
+.qtd-input:focus{border-color:var(--leaf);background:var(--leaf-soft)}
+.sug-val{text-align:right;color:var(--muted);font-weight:600;white-space:nowrap}
+.cot-preco-input{width:110px;padding:7px 9px;border:1.5px solid var(--gold);border-radius:8px;font-size:13.5px;font-weight:800;text-align:right;outline:none;font-family:inherit;color:var(--leaf-dark);background:var(--gold-soft)}
+.cot-preco-input:focus{border-color:var(--leaf);background:var(--leaf-soft)}
+.cot-sub{text-align:right;font-weight:800;color:var(--leaf-dark);white-space:nowrap}
+.cot-del{background:none;border:0;color:var(--danger);cursor:pointer;font-size:16px;padding:2px 6px;border-radius:6px;opacity:.7}
+.cot-del:hover{opacity:1;background:#fbe6e0}
+.cot-vazio{text-align:center;padding:34px;color:var(--muted)}
+.cot-total{display:flex;justify-content:flex-end;align-items:baseline;gap:14px;background:var(--leaf-soft);border:1px solid #b6d4c1;border-radius:12px;padding:16px 20px;margin-bottom:18px}
+.cot-total .lbl{font-size:13px;font-weight:700;color:var(--leaf-dark);text-transform:uppercase;letter-spacing:.5px}
+.cot-total .val{font-size:26px;font-weight:800;color:var(--leaf-dark)}
+.cot-total .desc{font-size:12.5px;color:var(--muted);font-weight:600}
+.cot-actions{display:flex;gap:10px;flex-wrap:wrap}
+/* minhas cotações */
+.mc-list{display:flex;flex-direction:column;gap:12px}
+.mc-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.mc-info{flex:1;min-width:200px}
+.mc-cliente{font-size:16px;font-weight:700;color:var(--ink)}
+.mc-meta{font-size:12.5px;color:var(--muted);margin-top:3px}
+.mc-status{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:3px 10px;border-radius:6px;display:inline-block;margin-top:6px}
+.mc-status.cotacao{background:var(--gold-soft);color:#8a6d1f}
+.mc-status.pedido{background:var(--leaf-soft);color:var(--leaf-dark)}
+.mc-total{font-size:20px;font-weight:800;color:var(--leaf-dark);white-space:nowrap}
+.mc-btns{display:flex;gap:8px;flex-wrap:wrap}
+.mc-btn{padding:8px 14px;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;border:1.5px solid var(--line);background:#fff;color:var(--ink);font-family:inherit}
+.mc-btn:hover{background:var(--paper)}
+.mc-btn.primary{background:var(--leaf);color:#fff;border-color:var(--leaf)}
+.mc-btn.primary:hover{background:var(--leaf-dark)}
+.mc-btn.danger{color:var(--danger);border-color:#f0c4b6}
+.mc-btn.danger:hover{background:#fbe6e0}
+.mc-vazio{text-align:center;padding:50px 20px;color:var(--muted)}
+/* login modal */
+.login-bg{display:none;position:fixed;inset:0;background:rgba(18,33,26,.55);z-index:200;align-items:center;justify-content:center;padding:20px}
+.login-bg.on{display:flex}
+.login-card{background:#fff;border-radius:16px;padding:28px;max-width:380px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.login-card h3{font-size:19px;margin-bottom:6px;color:var(--leaf-dark)}
+.login-card p{font-size:13.5px;color:var(--muted);margin-bottom:18px}
+.login-card label{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;display:block;margin-bottom:6px;margin-top:12px}
+.login-card input,.login-card select{width:100%;padding:11px 13px;border:1.5px solid var(--line);border-radius:9px;font-size:14px;outline:none;font-family:inherit}
+.login-card input:focus,.login-card select:focus{border-color:var(--leaf)}
+.login-card .btn{width:100%;justify-content:center;margin-top:20px}
+.login-err{color:var(--danger);font-size:13px;font-weight:600;margin-top:10px;display:none}
+.login-err.on{display:block}
+@media print{
+  header .tabs,.cot-add,.cot-sug,.cot-actions,.section-sub,footer{display:none!important}
+  .cot-del{display:none!important}
+  body{background:#fff}
+  .qtd-input,.cot-preco-input{border:0;background:transparent;font-weight:700}
+}
+@media(max-width:640px){.grid{grid-template-columns:1fr}.season{text-align:left}.hide-sm{display:none}}
+/* overlay do pedido */
+.ped-bg{display:none;position:fixed;inset:0;background:rgba(18,33,26,.6);z-index:300;align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto}
+.ped-bg.on{display:flex}
+.ped-modal{background:#fff;border-radius:12px;max-width:900px;width:100%;margin:16px 0;box-shadow:0 20px 60px rgba(0,0,0,.35);overflow:hidden}
+.ped-bar{display:flex;gap:10px;padding:14px 16px;background:var(--leaf-soft);border-bottom:1px solid var(--line);position:sticky;top:0}
+.ped-scroll{padding:18px;overflow-x:auto}
+.ped-doc{font-family:Arial,Helvetica,sans-serif;color:#111;font-size:12px;min-width:720px}
+.ped-doc .top{display:flex;justify-content:space-between;align-items:stretch;border:2px solid #111;border-bottom:0}
+.ped-doc .brand{padding:10px 12px}.ped-doc .brand .nome{font-size:22px;font-weight:800;letter-spacing:1px}.ped-doc .brand .subb{font-size:10px;color:#333}
+.ped-doc .emp{flex:1;text-align:center;padding:10px 6px;border-left:1px solid #111;border-right:1px solid #111}.ped-doc .emp .t{font-weight:800;font-size:13px}.ped-doc .emp .l{font-size:10px;line-height:1.4}
+.ped-doc .ped{padding:8px 12px;text-align:center;min-width:150px}.ped-doc .ped .lbl{background:#111;color:#fff;font-weight:800;padding:2px 14px;font-size:13px;letter-spacing:1px;display:inline-block}.ped-doc .ped .num{font-size:22px;font-weight:800;margin-top:4px}.ped-doc .ped .data{font-size:11px;margin-top:6px}
+.ped-doc .cad{border:2px solid #111;border-bottom:0}.ped-doc .cad .h{background:#eee;font-weight:800;text-align:center;padding:3px;border-bottom:1px solid #111;font-size:11px}
+.ped-doc .row{display:flex;border-bottom:1px solid #111}.ped-doc .row:last-child{border-bottom:0}.ped-doc .cell{padding:5px 8px;border-right:1px solid #111;font-size:11px}.ped-doc .cell:last-child{border-right:0}.ped-doc .cell b{font-size:9px;color:#333;display:block;text-transform:uppercase}
+.ped-doc table.itens{width:100%;border-collapse:collapse;border:2px solid #111;border-top:0}
+.ped-doc table.itens th{background:#eee;border:1px solid #111;padding:4px;font-size:10px;text-transform:uppercase}
+.ped-doc table.itens td{border:1px solid #111;padding:5px 6px;height:22px;font-size:11px}
+.ped-doc td.c{text-align:center}.ped-doc td.r{text-align:right}
+.ped-doc .tot{display:flex;justify-content:flex-end;border:2px solid #111;border-top:0;padding:8px 12px;font-size:15px;font-weight:800;gap:12px}
+.ped-doc .obs{border:2px solid #111;border-top:0;padding:8px 12px;font-size:9.5px;color:#333;line-height:1.4}
+.ped-doc .assin{margin-top:40px;text-align:center;font-size:10px;border-top:1px solid #111;width:60%;margin:40px auto 0;padding-top:4px}
+/* impressão: mostra só o pedido */
+@media print{
+  @page{ size:A4 portrait; margin:10mm; }
+  body.printing-ped>*{display:none!important}
+  body.printing-ped .ped-bg{display:block!important;position:static;background:#fff;padding:0;overflow:visible}
+  body.printing-ped .ped-modal{box-shadow:none;margin:0;max-width:none;border-radius:0}
+  body.printing-ped .ped-bar{display:none!important}
+  body.printing-ped .ped-scroll{padding:0;overflow:visible}
+  body.printing-ped .ped-doc{min-width:0;width:100%}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="head-top">
+      <div class="brand">
+        <div class="logo">SA</div>
+        <div><h1>Setec Agro</h1><div class="sub">Lista de Preços</div></div>
+      </div>
+      <div class="season">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end">
+          <div style="text-align:right"><div class="safra">26/27</div><div class="lbl">Safra</div></div>
+        </div>
+        <div style="margin-top:10px;display:flex;align-items:center;gap:8px;justify-content:flex-end">
+          <span style="font-size:12px;opacity:.85">Consultor:</span>
+          <select id="consultorSel" style="min-width:150px;padding:7px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.12);color:#fff;font-weight:600;font-size:13px"></select>
+        </div>
+      </div>
+    </div>
+    <div class="tabs">
+      <button class="tab on" id="tabList">Lista de Preços</button>
+      <button class="tab" id="tabCotacao">Nova Cotação</button>
+      <button class="tab" id="tabMinhas">Minhas Cotações</button>
+      <button class="tab" id="tabMargem">Margens & Vencimentos</button>
+    </div>
+  </div>
+</header>
+
+<div id="listView">
+<div class="controls">
+  <div class="wrap">
+    <div class="ctrl-row">
+      <div class="search">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input id="q" type="text" placeholder="Buscar produto, princípio ativo ou fabricante...">
+      </div>
+      <select id="pagSel" class="pagsel"></select>
+      <select id="fabSel"><option value="ALL">Todos fabricantes</option><option value="AGRICHEM">AGRICHEM</option><option value="ALBAUGH">ALBAUGH</option><option value="ALTA">ALTA</option><option value="ASCENZA">ASCENZA</option><option value="FMC">FMC</option><option value="LALLEMAND">LALLEMAND</option><option value="NORTOX">NORTOX</option><option value="OURO FINO">OURO FINO</option><option value="PILARQUIM">PILARQUIM</option><option value="RAINBOW">RAINBOW</option><option value="ROVENSA">ROVENSA</option><option value="SIMBIOSE">SIMBIOSE</option><option value="SIPCAM">SIPCAM</option><option value="SOLUS">SOLUS</option><option value="SYNGENTA">SYNGENTA</option><option value="TECNOMIL">TECNOMIL</option><option value="WILLIWOOD">WILLIWOOD</option></select>
+      <select id="sortSel">
+        <option value="ia">Ordenar: Princípio Ativo</option>
+        <option value="prod">Ordenar: Produto (A-Z)</option>
+        <option value="fab">Ordenar: Fabricante</option>
+        <option value="price-asc">Ordenar: Menor Preço</option>
+        <option value="price-desc">Ordenar: Maior Preço</option>
+      </select>
+      <div class="view-toggle">
+        <button id="vGrid" class="on">Cards</button>
+        <button id="vTable">Tabela</button>
+      </div>
+    </div>
+    <div class="chips" id="chips">
+      <div class="chip on" data-cat="ALL">Todos</div>
+      <div class="chip" data-cat="DEFENSIVOS">Defensivos</div>
+      <div class="chip esp" data-cat="ESPECIALIDADES">Especialidades</div>
+    </div>
+  </div>
+</div>
+<main>
+  <div class="wrap">
+    <div class="count-line" id="countLine">Exibindo <b>245</b> de 245 produtos</div>
+    <div id="content"><div class="grid"><div class="pcard"><div class="pc-top"><span class="pc-fab">AGRICHEM</span><span class="pc-cat">ESPECIALIDADES</span></div><div class="pc-name">MAXI ZINC 10LT</div><div class="pc-ia">1000 g/L Zn</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>86,25</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">AGRICHEM</span><span class="pc-cat">ESPECIALIDADES</span></div><div class="pc-name">BORO SUPER 10 LT</div><div class="pc-ia">159,8 g/L B;</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>25,14</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">AGRICHEM</span><span class="pc-cat">ESPECIALIDADES</span></div><div class="pc-name">FERRIFLO 10 LT</div><div class="pc-ia">179,30 g/L N; 358,6 g/L Fe</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>101,81</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">ALBAUGH</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">EXEMPLO</div><div class="pc-ia">2,4 D</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>21,05</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">ALTA</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">FIELD- 20 L</div><div class="pc-ia">2,4 D</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>20,00</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">AGRICHEM</span><span class="pc-cat">ESPECIALIDADES</span></div><div class="pc-name">BOOSTER PRO 20 LT</div><div class="pc-ia">24,4 g/L Mo; 36,6 g/L Zn</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>119,78</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">AGRICHEM</span><span class="pc-cat">ESPECIALIDADES</span></div><div class="pc-name">CONCENTRAT FIX 5 LT</div><div class="pc-ia">30,24 g/L Co; 352 g/l Mo</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>251,53</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">AGRICHEM</span><span class="pc-cat">ESPECIALIDADES</span></div><div class="pc-name">CONCENTRAT MAG 10 LT</div><div class="pc-ia">304,5 g/L Mg; 4,3 g/L Zn</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>46,71</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">AGRICHEM</span><span class="pc-cat">ESPECIALIDADES</span></div><div class="pc-name">NITAMIN 1000LT</div><div class="pc-ia">330 g/l N</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>10,78</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">AGRICHEM</span><span class="pc-cat">ESPECIALIDADES</span></div><div class="pc-name">NITAMIN 20 LT</div><div class="pc-ia">330 g/l N</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">AGRICHEM</span><span class="pc-cat">ESPECIALIDADES</span></div><div class="pc-name">CONCENTRAT MN 10 LT</div><div class="pc-ia">331,80 g/L Mn</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>35,93</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">AGRICHEM</span><span class="pc-cat">ESPECIALIDADES</span></div><div class="pc-name">KMAX 10LT</div><div class="pc-ia">365 g/L K²O; 248,0 g/L S</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>26,12</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">AGRICHEM</span><span class="pc-cat">ESPECIALIDADES</span></div><div class="pc-name">AGRI K 10 LT</div><div class="pc-ia">483,0 g/L K²O</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>37,73</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">AGRICHEM</span><span class="pc-cat">ESPECIALIDADES</span></div><div class="pc-name">BIG RED 10 LT</div><div class="pc-ia">491 g/L Cu</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>112,59</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">AGRICHEM</span><span class="pc-cat">ESPECIALIDADES</span></div><div class="pc-name">FREEFOS 10 LT</div><div class="pc-ia">518 g/L P²O; 158 g/L N</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>28,74</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">AGRICHEM</span><span class="pc-cat">ESPECIALIDADES</span></div><div class="pc-name">BOOSTER INFINITY 10 LT</div><div class="pc-ia">6,66 g/L CU , 4,26 g/L MO, 32 g/L ZN</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>150,92</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">NORTOX</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">ABAMECTIN 72 EC NORTOX</div><div class="pc-ia">ABAMECTINA 72</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>73,15</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">NORTOX</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">ALLORA</div><div class="pc-ia">ACEFATO</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SIPCAM</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">CEFANOL GOLD- 8X3 KG</div><div class="pc-ia">ACEFATO</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>46,85</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">RAINBOW</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">WEXITE</div><div class="pc-ia">ACEFATO</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">RAINBOW</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">ACEGOL 12X1</div><div class="pc-ia">ACETAMIPRID</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">RAINBOW</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">ACEMIP 4X5</div><div class="pc-ia">ACETAMIPRID</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>27,93</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">NORTOX</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">ACETAMIPRID NORTOX</div><div class="pc-ia">ACETAMIPRID</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">RAINBOW</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">ACEWAY</div><div class="pc-ia">ACETAMIPRIDO + BIFENTRINA</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>92,95</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">ALBAUGH</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">AFIADO</div><div class="pc-ia">ACETAMIPRIDO + BIFENTRINA</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>100,58</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">TECNOMIL</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">ELIPSE 4X5</div><div class="pc-ia">ACETAMIPRIDO + BIFENTRINA</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>91,43</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">OURO FINO</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">AUTENTICOBR 20KG</div><div class="pc-ia">Acetamiprido</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>29,14</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">ROVENSA</span><span class="pc-cat">ESPECIALIDADES</span></div><div class="pc-name">AIR TRUCK (4X5)</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>58,29</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SYNGENTA</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">PRIMESTRA GOLD</div><div class="pc-ia">ATRAZINA + S-METOLACLORO</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">PILARQUIM</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">BLOQUEO 10 KG</div><div class="pc-ia">ATRAZINA 900 WG</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>32,29</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SYNGENTA</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">PROOF</div><div class="pc-ia">ATRAZINA</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">ALBAUGH</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">ULTIMATO SC 20L</div><div class="pc-ia">ATRAZINA</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>19,77</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">LALLEMAND</span><span class="pc-cat">ESPECIALIDADES</span></div><div class="pc-name">LALRIZE AZOS (BO 4X3 LT)</div><div class="pc-ia">Azospirillum brasilense</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>137,15</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SYNGENTA</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">ELATUS</div><div class="pc-ia">AZOXISTROBINA + BENZOVINDIFLUPIR</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SYNGENTA</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">PRIORI XTRA- 20 L</div><div class="pc-ia">AZOXISTROBINA + CIPROCONAZOL</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SYNGENTA</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">PRIORI TOP</div><div class="pc-ia">AZOXISTROBINA + DIFENOCONAZOL</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SIPCAM</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">VITENE</div><div class="pc-ia">AZOXISTROBINA + DIFENOCONAZOL</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>148,58</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">NORTOX</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">TEBUCO A NORTOX</div><div class="pc-ia">AZOXISTROBINA + TEBUCONAZOL</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">OURO FINO</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">TEBURAZ 20 L</div><div class="pc-ia">AZOXISTROBINA + TEBUCONAZOL</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>49,15</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">TECNOMIL</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">DESALI 4X5</div><div class="pc-ia">AZOXITROBINA + BENZOVINDIFLUPIR</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>357,74</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SIMBIOSE</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">NemaControl SUPER 6x2Lt</div><div class="pc-ia">Bacillus amyloliquefaciens BS10 1x10^10 - Nematoides</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>582,89</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SIMBIOSE</span><span class="pc-cat">ESPECIALIDADES</span></div><div class="pc-name">NEMACONTROL SUPER 6X2LT</div><div class="pc-ia">BACILLUS AMYLOLIQUEFACIENS BS10 1X10^10 – NEMATOIDES</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>601,18</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">LALLEMAND</span><span class="pc-cat">ESPECIALIDADES</span></div><div class="pc-name">ONIX (12X1 LT)</div><div class="pc-ia">Bacillus methylotrophicus UFPEDA 20</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>231,07</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">LALLEMAND</span><span class="pc-cat">ESPECIALIDADES</span></div><div class="pc-name">RIZOS-BACILLUS (12X1LT) (4X5LT)</div><div class="pc-ia">Bacillus Subtilis</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>231,07</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SIMBIOSE</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">Bt Control 1x10Lt</div><div class="pc-ia">Bacillus thuringiensis CCT1306 - Complexo lagartas, 17% ativo</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>65,15</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SIMBIOSE</span><span class="pc-cat">ESPECIALIDADES</span></div><div class="pc-name">BT CONTROL 1X10LT</div><div class="pc-ia">BACILLUS THURINGIENSIS CCT1306 - COMPLEXO LAGARTAS, 17% ATIVO</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>74,29</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">LALLEMAND</span><span class="pc-cat">ESPECIALIDADES</span></div><div class="pc-name">CRYSTAL SC (5LT)</div><div class="pc-ia">Bacillus thuringiensis subsp Thoworthy isdo 344</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>232,93</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SIMBIOSE</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">EficazControl -6x2 Lt</div><div class="pc-ia">Bacillus velezensis 2x10^9/ml e Paenibacillus ottowi 2x10^9/ml - Fung. de solo</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>411,45</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SIMBIOSE</span><span class="pc-cat">ESPECIALIDADES</span></div><div class="pc-name">EFICAZCONTROL -6X2 LT</div><div class="pc-ia">BACILLUS VELEZENSIS 2X10^9/ML E PAENIBACILLUS OTTOWI 2X10^9/ML - FUNG. DE SOLO</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>457,17</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SIMBIOSE</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">FrontierControl - 5L</div><div class="pc-ia">Bacillus velezensis LABIM 40 5X10^9 - Fungicida parte aérea</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>90,52</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SIMBIOSE</span><span class="pc-cat">ESPECIALIDADES</span></div><div class="pc-name">FRONTIERCONTROL - 5L</div><div class="pc-ia">BACILLUS VELEZENSIS LABIM 40 5X10^9 - FUNGICIDA PARTE AÉREA</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>90,52</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SYNGENTA</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">ARVÁTICO- 4X5 L</div><div class="pc-ia">BACILLUS VELEZENSIS</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SIMBIOSE</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">VirControl Sf – 6x1 kg</div><div class="pc-ia">Baculovirurs - Lagarta Spodoptera</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>474,31</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SIMBIOSE</span><span class="pc-cat">ESPECIALIDADES</span></div><div class="pc-name">VIRCONTROL SF – 6X1 KG</div><div class="pc-ia">BACULOVIRURS - LAGARTA SPODOPTERA</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>560,03</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">LALLEMAND</span><span class="pc-cat">ESPECIALIDADES</span></div><div class="pc-name">GRANADA (1KG)</div><div class="pc-ia">Beauveria bassiana 1x1010  UFC / g</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>254,04</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SIMBIOSE</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">FlyControl – 6x2Lt</div><div class="pc-ia">Beauveria bassiana BB15 - Cigarrinha milho 2x10^9</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>203,44</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SIMBIOSE</span><span class="pc-cat">ESPECIALIDADES</span></div><div class="pc-name">FLYCONTROL – 6X2LT</div><div class="pc-ia">BEAUVERIA BASSIANA BB15 - CIGARRINHA MILHO 2X10^9</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>203,44</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SYNGENTA</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">PROCLAIM 50</div><div class="pc-ia">BENZOATO DE EMAMECTINA</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SYNGENTA</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">MITRION</div><div class="pc-ia">BENZOVINDIFLUPIR + PROTIOCONAZOL</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">FMC</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">TALISMAN 5L</div><div class="pc-ia">BIFENTRINA + CARBOSSULFANO</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>66,07</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">PILARQUIM</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">AMETISTA (FMC)- 10 L</div><div class="pc-ia">BIFENTRINA + ZETACIPERMETRINA</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>142,87</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">RAINBOW</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">COFENRIN</div><div class="pc-ia">BIFENTRINA 400</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>92,48</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">TECNOMIL</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">ORSA 400 EC</div><div class="pc-ia">BIFENTRINA 400</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>89,15</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">FMC</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">TALSTAR 400 5L</div><div class="pc-ia">BIFENTRINA 400</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>128,44</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">NORTOX</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">BIFENTRINA A NORTOX</div><div class="pc-ia">BIFENTRINA</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">ROVENSA</span><span class="pc-cat">ESPECIALIDADES</span></div><div class="pc-name">BIOCEL (12X1)</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>160,01</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">RAINBOW</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">POLY MILAT</div><div class="pc-ia">BIOESTIMULANTE</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>127,24</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">RAINBOW</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">SEAROOT</div><div class="pc-ia">BIOESTIMULANTE</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>52,36</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">RAINBOW</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">TRIGROW</div><div class="pc-ia">BIOESTIMULANTE</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>72,57</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">LALLEMAND</span><span class="pc-cat">ESPECIALIDADES</span></div><div class="pc-name">BIOPROTECTOR</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>130,29</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">LALLEMAND</span><span class="pc-cat">ESPECIALIDADES</span></div><div class="pc-name">STARFIX SOJA (BO 4X3 )</div><div class="pc-ia">Bradyrhizobium japonicum 1x10*10 UFC/mL</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>133,72</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SIMBIOSE</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">Simbiose Nod 200 ds</div><div class="pc-ia">Bradyrhizobium japonicum</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>1,14</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">AGRICHEM</span><span class="pc-cat">ESPECIALIDADES</span></div><div class="pc-name">CAL SUPER 10 LT</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>25,35</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">FMC</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">AURORA 4X5</div><div class="pc-ia">CARFETRAZONA</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>351,51</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">PILARQUIM</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">CONVERGE (FMC)- 4X5 L</div><div class="pc-ia">CARFETRAZONA</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>314,30</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">RAINBOW</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">FULL GUARD</div><div class="pc-ia">CARFETRAZONA</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">TECNOMIL</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">HAMPTON EC- 4X5 L</div><div class="pc-ia">CARFETRAZONA</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>297,16</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">FMC</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">BENEVIA 4X5</div><div class="pc-ia">CIANTRANILIPROLE</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>245,77</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SYNGENTA</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">FORTENZA- 4X5 L</div><div class="pc-ia">CIANTRANILIPROLE</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SYNGENTA</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">VICTRATO</div><div class="pc-ia">CICLOBUTRIFLURAM</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">NORTOX</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">CIPERMETRINA NORTOX</div><div class="pc-ia">CIPERMETRINA EC</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>36,57</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">NORTOX</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">CLETODIN OLEUM</div><div class="pc-ia">CLETODIM + OLEO</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>38,06</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">ALTA</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">CARTAGO- 20 L</div><div class="pc-ia">CLETODIM</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">ALBAUGH</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">FRENO</div><div class="pc-ia">CLETODIM</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>35,43</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">RAINBOW</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">GRASIDIN</div><div class="pc-ia">CLETODIM</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>33,94</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SYNGENTA</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">POQUER</div><div class="pc-ia">CLETODIM</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SYNGENTA</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">POQUER- 20 L</div><div class="pc-ia">CLETODIM</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SYNGENTA</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">TOPIK 240</div><div class="pc-ia">CLODINAFOPE + PROGARGLI</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SYNGENTA</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">TOPIK</div><div class="pc-ia">CLODINAFOPE -PROGARGIL</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">FMC</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">REATOR 20L</div><div class="pc-ia">CLOMAZONA 360</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>57,15</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SYNGENTA</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">INSTIVO</div><div class="pc-ia">CLORANTRANILIPOLE + ABAMECTINA</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">FMC</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">PREMIO STAR 5L</div><div class="pc-ia">CLORANTRANILIPROLE + BIFENTRINA</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>190,06</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">NORTOX</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">TEMPUS NORTOX</div><div class="pc-ia">CLORANTRANILIPROLE + CLORPIRIFÓS</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>69,95</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">NORTOX</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">TYPHOON NORTOX 4X5</div><div class="pc-ia">CLORANTRANILIPROLE + METOMIL</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>57,15</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">TECNOMIL</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">OPTERA PRO/ COREGIS- 4X5 L</div><div class="pc-ia">CLORANTRANILIPROLE)</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>297,16</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">FMC</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">PREMIO 5L</div><div class="pc-ia">CLORANTRANILIPROLE</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>444,25</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">TECNOMIL</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">ADVER</div><div class="pc-ia">CLORFENAPIR</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>44,57</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">NORTOX</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">CLORFENAPIR NORTOX</div><div class="pc-ia">CLORFENAPIR</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">RAINBOW</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">KILLIGAN</div><div class="pc-ia">CLORFENAPIR</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>46,36</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">ALTA</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">KILLIGAN- 20 L</div><div class="pc-ia">CLORFENAPIR</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">PILARQUIM</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">CLIPPER SINON- 48 X 0,3</div><div class="pc-ia">CLORIMURON</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>57,15</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">RAINBOW</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">ZERRUST MIXX</div><div class="pc-ia">CLOROTALONIL + PICOXISTROBINA + TEBUCONAZOL</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>71,68</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SYNGENTA</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">BRAVONIL 720</div><div class="pc-ia">CLOROTALONIL</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SIPCAM</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">ECHO- 20 L</div><div class="pc-ia">CLOROTALONIL</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>30,29</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">PILARQUIM</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">PILARICH- 20 L</div><div class="pc-ia">CLOROTALONIL</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>27,43</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">OURO FINO</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">CAPATAZBR BL</div><div class="pc-ia">CLORPIRIFOS</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>32,00</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">TECNOMIL</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">CLORPIRIFOS 48 EC GHARDA- 20L</div><div class="pc-ia">CLORPIRIFOS</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>32,00</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">WILLIWOOD</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">WILPHOS</div><div class="pc-ia">CLORPIRIFOS</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>30,74</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">LALLEMAND</span><span class="pc-cat">ESPECIALIDADES</span></div><div class="pc-name">Lal Guard Java</div><div class="pc-ia">Cordyceps javanica (por conta de taxonomia, isaria passou a se chamar cordyceps)</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>323,45</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SYNGENTA</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">POLO- 20L</div><div class="pc-ia">DIAFENTIURON</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SYNGENTA</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">ALADE</div><div class="pc-ia">DIFENO + CIPROC+ BENZOVINDIFLUPIR</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SYNGENTA</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">CYPRESS 400 EC</div><div class="pc-ia">DIFENOCONAZOL + CIPROCONAZOL</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">FMC</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">ONSUVA 5L</div><div class="pc-ia">DIFENOCONAZOL + FLUINDAPIR</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>343,97</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SYNGENTA</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">MIRAVIS DUO</div><div class="pc-ia">DIFENOCONAZOL + PIDIFLUMETOFEM</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SOLUS</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">STIVA</div><div class="pc-ia">DIFENOCONAZOL 250</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>44,57</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">PILARQUIM</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">AGROTOP- 4X5 L</div><div class="pc-ia">DIFENOCONAZOL</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>43,43</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">RAINBOW</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">BLOWOUT</div><div class="pc-ia">DIQUATE</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">ALBAUGH</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">EGAN</div><div class="pc-ia">DIQUATE</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>25,88</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SYNGENTA</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">REGLONE</div><div class="pc-ia">DIQUATE</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">ASCENZA</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">EXTREME 12X1</div><div class="pc-ia">ESPINETORAN</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>733,76</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SIPCAM</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">FUJIMITE- 12X1</div><div class="pc-ia">FENPIROXIMATO</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>79,43</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SYNGENTA</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">SEEKER</div><div class="pc-ia">FENPROPIDINA</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">ALTA</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">EVENTRA- 10X1 KG</div><div class="pc-ia">FIPRONIL 800</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>308,59</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">TECNOMIL</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">LANEX 800 WG- 4X5 KG</div><div class="pc-ia">FIPRONIL 800</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>308,59</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SIPCAM</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">TORINO- 4X5 L TSI</div><div class="pc-ia">FLUAZINAM + TIOFANATO METILICO</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>91,43</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">WILLIWOOD</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">FLUAZINAM 500 SC</div><div class="pc-ia">FLUAZINAM</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>84,58</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">NORTOX</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">FLUAZINAM NORTOX 500 SC</div><div class="pc-ia">FLUAZINAM</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>81,15</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">ALBAUGH</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">ORIGAN 500 SC</div><div class="pc-ia">FLUAZINAM</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">RAINBOW</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">WINOUT XTRA</div><div class="pc-ia">FLUAZINAM</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">AGRICHEM</span><span class="pc-cat">ESPECIALIDADES</span></div><div class="pc-name">FLUILFLEX MAX</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">TECNOMIL</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">MAGMA 500 SC- 4X5 L</div><div class="pc-ia">FLUMIOXAZINA</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">RAINBOW</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">SUNGAIN XTRA</div><div class="pc-ia">FLUMIOXAZINA</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>154,52</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">ALTA</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">VERACE- 4X5 L</div><div class="pc-ia">FLUMIOXAZINA</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SYNGENTA</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">EDDUS</div><div class="pc-ia">FOMESAFEM + S-METOLACLORO</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SYNGENTA</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">FLEX- 4X5 L</div><div class="pc-ia">FOMESAFEM</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">ALBAUGH</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">PRECISO XK</div><div class="pc-ia">GLIFOSATO</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>26,53</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">RAINBOW</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">SOLDIER</div><div class="pc-ia">GLIFOSATO</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>33,22</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">TECNOMIL</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">TECNUP MAX- 20KG</div><div class="pc-ia">GLIFOSATO</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>32,69</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">ALTA</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">ZAFERA- 20 L</div><div class="pc-ia">GLIFOSATO</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>31,43</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SYNGENTA</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">ZAPP QI</div><div class="pc-ia">GLIFOSATO</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">NORTOX</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">GLUFOSINATO 880 NORTOX</div><div class="pc-ia">GLUFOSINATO 880</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>60,00</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">ALTA</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">AUDACE 850 WG- 20 KG</div><div class="pc-ia">GLUFOSINATO</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">ALTA</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">AUDACE- 20 L</div><div class="pc-ia">GLUFOSINATO</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">TECNOMIL</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">LOYER 200 TM- 20 L</div><div class="pc-ia">GLUFOSINATO</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>16,00</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">OURO FINO</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">OFF ROAD 20 L</div><div class="pc-ia">GLUFOSINATO</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>18,29</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">RAINBOW</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">TRUSINATE XTRA</div><div class="pc-ia">GLUFOSINATO</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>59,43</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">RAINBOW</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">GLINT FULL</div><div class="pc-ia">HALOXIFOPE</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>115,71</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">RAINBOW</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">SOYACLEAN</div><div class="pc-ia">IMAZETAPYR</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>30,90</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">WILLIWOOD</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">CUTLASS</div><div class="pc-ia">IMIDACLOPRID</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>82,29</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">RAINBOW</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">KINGPRIDO XTRA</div><div class="pc-ia">IMIDACLOPRID</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">ALTA</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">TAUS 10X1</div><div class="pc-ia">IMIDACLOPRID</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>74,29</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SIMBIOSE</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">Simbiose MAIZ- 100 ds</div><div class="pc-ia">Inoculante gramínea Azospirillum brasiliense 2,5x10^8 (abv5 e abv6)</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>3,89</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SIMBIOSE</span><span class="pc-cat">ESPECIALIDADES</span></div><div class="pc-name">SIMBIOSE MAIZ- 100 DS</div><div class="pc-ia">INOCULANTE GRAMÍNEA AZOSPIRILLUM BRASILIENSE 2,5X10^8 (ABV5 E ABV6)</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>4,29</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SIMBIOSE</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">Solubphos – 6x2Lt</div><div class="pc-ia">Inoculante solubilizador de fósforo 4x10a9 B. Subtilis  BRM2084 e B. Megaterium BRM119</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>571,46</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SIMBIOSE</span><span class="pc-cat">ESPECIALIDADES</span></div><div class="pc-name">SOLUBPHOS – 6X2LT</div><div class="pc-ia">INOCULANTE SOLUBILIZADOR DE FÓSFORO 4X10A9 B. SUBTILIS BRM2084 E B. MEGATERIUM BRM119</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>593,18</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SIMBIOSE</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">IsaControl 2x5 lt</div><div class="pc-ia">Isaria fumosorosea cepa ESALQ 4778 3x10^9/ml</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>148,58</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SIMBIOSE</span><span class="pc-cat">ESPECIALIDADES</span></div><div class="pc-name">ISACONTROL 2X5 LT</div><div class="pc-ia">ISARIA FUMOSOROSEA CEPA ESALQ 4778 3X10^9/ML</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>148,58</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SYNGENTA</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">VERDAVIS</div><div class="pc-ia">ISOCICLOSERAM + LAMBDA CIALOTINA</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">LALLEMAND</span><span class="pc-cat">ESPECIALIDADES</span></div><div class="pc-name">LAL NIX RESSIST 1KG</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>490,66</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">LALLEMAND</span><span class="pc-cat">ESPECIALIDADES</span></div><div class="pc-name">LALFIX NITRO 3L</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>140,58</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">LALLEMAND</span><span class="pc-cat">ESPECIALIDADES</span></div><div class="pc-name">LALSTIM NUTRI 20</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>947,94</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">PILARQUIM</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">SAMURAI 10 LT</div><div class="pc-ia">LAMBDA + CIALOTRINA</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SYNGENTA</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">AMPLIGO</div><div class="pc-ia">LAMBDA CIALOTRINA + CLORANTRANILIPROLE</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SOLUS</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">JUDOKA SUPER</div><div class="pc-ia">LAMBDA CIALOTRINA 250</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>50,29</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">RAINBOW</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">LASTING CS</div><div class="pc-ia">LAMBIDA CIALOTRINA</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>56,16</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SOLUS</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">BOX 50</div><div class="pc-ia">LUFENURON 50</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>28,57</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SYNGENTA</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">MATCH EC</div><div class="pc-ia">LUFENURON</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">PILARQUIM</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">PILARVANT 105 SC</div><div class="pc-ia">LUFENURON</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>51,43</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">RAINBOW</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">ROFEN FULL</div><div class="pc-ia">LUFENURON</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>53,01</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">ALTA</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">TAGGER 4X5</div><div class="pc-ia">LUFENURON</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">ROVENSA</span><span class="pc-cat">ESPECIALIDADES</span></div><div class="pc-name">MACROFOL S (1X20)</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>21,60</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">RAINBOW</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">RAINZEB</div><div class="pc-ia">MANCOZEB</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">TECNOMIL</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">TRISEB 10 L</div><div class="pc-ia">MANCOZEB</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>29,72</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">ROVENSA</span><span class="pc-cat">ESPECIALIDADES</span></div><div class="pc-name">MEGA SOLVE (4X5)</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>49,15</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">ROVENSA</span><span class="pc-cat">ESPECIALIDADES</span></div><div class="pc-name">MEGAFAST (1X20)</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>38,73</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">ROVENSA</span><span class="pc-cat">ESPECIALIDADES</span></div><div class="pc-name">MEGAFAST (4X5)</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>42,29</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">ROVENSA</span><span class="pc-cat">ESPECIALIDADES</span></div><div class="pc-name">MEGATRON (1X20)</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>43,20</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SYNGENTA</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">CALARIS</div><div class="pc-ia">MESOTRIONA + ATRAZINA</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">RAINBOW</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">MESTRANG</div><div class="pc-ia">MESOTRIONA</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>58,90</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SIMBIOSE</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">MethaControl Evolution - 5L</div><div class="pc-ia">Metarhizium anisopliae IBC425 - Percevejo castanho, 2x10^9</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>142,87</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SIMBIOSE</span><span class="pc-cat">ESPECIALIDADES</span></div><div class="pc-name">METHACONTROL EVOLUTION - 5L</div><div class="pc-ia">METARHIZIUM ANISOPLIAE IBC425 - PERCEVEJO CASTANHO, 2X10^9</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>142,87</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">ALBAUGH</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">BAZUKA</div><div class="pc-ia">METOMIL</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>20,80</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">OURO FINO</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">BRILHANTE BR 20 L</div><div class="pc-ia">METOMIL</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>20,57</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">RAINBOW</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">METOMY</div><div class="pc-ia">METOMIL</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>83,20</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SIPCAM</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">ANCOSAR- 20 L</div><div class="pc-ia">MSMA</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>32,57</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SYNGENTA</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">OCHIMA- 4X5 L ÓLEO</div><div class="pc-ia">OLEO</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SIPCAM</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">CUPROZEB- 2X10 KG</div><div class="pc-ia">OXICLORETO DE COBRE + MANZOZEB</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>66,29</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">ROVENSA</span><span class="pc-cat">ESPECIALIDADES</span></div><div class="pc-name">PHOS-UP (1,5X10)</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>480,03</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">RAINBOW</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">KROMSTAR</div><div class="pc-ia">PICOXISTROBINA + CIPROCONAZOL</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>112,15</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">ALTA</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">AVARIS- 4X5 L</div><div class="pc-ia">PICOXISTROBINA + PROTIOCONAZOL</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SYNGENTA</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">MIRAVIS PRO</div><div class="pc-ia">PIDIFLUMEFEM + PROTIOCONAZOL</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">NORTOX</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">PIRIPROXIFEN NORTOX</div><div class="pc-ia">PIRIPROXIFEN 200</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>61,15</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">ALTA</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">COUGAR 4X5</div><div class="pc-ia">PIRIPROXIFEN</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">ALBAUGH</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">PORCEL</div><div class="pc-ia">PIRIPROXIFEN</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>34,63</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">TECNOMIL</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">VALLEX- 4X5</div><div class="pc-ia">PIRIPROXIFEN</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>34,29</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">ROVENSA</span><span class="pc-cat">ESPECIALIDADES</span></div><div class="pc-name">PREV-AM (4X5)</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>67,43</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">OURO FINO</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">PARRUDOBR 20L</div><div class="pc-ia">PROCIMIDONA</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>97,15</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SYNGENTA</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">POLYTRIN EC</div><div class="pc-ia">PROFENOFÓS + CIPERMETRINA</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SYNGENTA</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">CURYOM 4X5</div><div class="pc-ia">PROFENOFÓS + LUFENURON</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SYNGENTA</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">SCORE FLEXI</div><div class="pc-ia">PROPICONAZOL + DIFENOCONAZOL</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SYNGENTA</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">TILT- 4X5 L</div><div class="pc-ia">PROPICONAZOL</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">TECNOMIL</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">PROSOY TRIO- 10L</div><div class="pc-ia">PROTIOCONAZOL + PICOXISTROBINA + MANCOZEB</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>48,00</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">NORTOX</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">SCUDEIRO NORTOX</div><div class="pc-ia">PROTIOCONAZOL + TEBUCONAZOL</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">TECNOMIL</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">TENOX 4X5L</div><div class="pc-ia">PROTIOCONAZOL + TRIFLOXISTROBINA</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>148,58</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">AGRICHEM</span><span class="pc-cat">ESPECIALIDADES</span></div><div class="pc-name">REFORCE ULTRA</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>107,80</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SYNGENTA</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">EDDUS- 4X5</div><div class="pc-ia">S-METALACLOR + FOMESAFEN</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">TECNOMIL</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">METHOS</div><div class="pc-ia">S-METOLACLOR</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>34,29</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">RAINBOW</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">METRARO 20 L</div><div class="pc-ia">S-METOLACLOR</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SYNGENTA</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">DUAL GOLD 960</div><div class="pc-ia">S-METOLACLORO</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">RAINBOW</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">SAFENCIL</div><div class="pc-ia">SAFLUFENACIL (HEAT)</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>1.122,26</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SIPCAM</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">FEZAN GOLD- 20 L</div><div class="pc-ia">TEBUCONAZOL + CLOROTALONIL</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>38,86</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">ALBAUGH</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">ODIN</div><div class="pc-ia">TEBUCONAZOL</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>38,63</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">ALTA</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">SEVEN- 4X5 L</div><div class="pc-ia">TEBUCONAZOL</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>35,43</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">NORTOX</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">TEBUCO 430 SC</div><div class="pc-ia">TEBUCONAZOL</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SIPCAM</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">CLICK PRO- 20 L</div><div class="pc-ia">TERBUTILAZINA + MESOTRIONA</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>61,73</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SIPCAM</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">CLICK</div><div class="pc-ia">TERBUTILAZINA</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>29,00</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">NORTOX</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">TERBUTILAZINA NORTOX 20L</div><div class="pc-ia">TERBUTILAZINA</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>27,43</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">OURO FINO</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">TERRAD&#x27;OR 339 SC 5L</div><div class="pc-ia">TIAFENACIL</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>468,60</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SYNGENTA</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">ENGEO PLENO</div><div class="pc-ia">TIAMETOXAM + LAMBDA CIALOTRINA</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">TECNOMIL</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">PLATINUM NEO- 4X5 L</div><div class="pc-ia">TIAMETOXAM + LAMBDA CIALOTRINA</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>102,86</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SYNGENTA</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">ACTARA 250</div><div class="pc-ia">TIAMETOXAM</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SYNGENTA</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">ACTARA 750</div><div class="pc-ia">TIAMETOXAM</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SYNGENTA</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">DURIVO- 20 L</div><div class="pc-ia">TIAMETOXAN +  CLORANTRANILIPROLE</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SYNGENTA</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">CRUISER- 20 L</div><div class="pc-ia">TIAMETOXAN</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">NORTOX</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">TIOFANATO NORTOX 20L</div><div class="pc-ia">TIOFANATO METILICO 500</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>25,72</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SIPCAM</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">SUPPORT- 20 L</div><div class="pc-ia">TIOFANATO METILICO</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>29,72</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">LALLEMAND</span><span class="pc-cat">ESPECIALIDADES</span></div><div class="pc-name">QUALITY TS (5X1KG)</div><div class="pc-ia">Trichoderma Asperellum 28%</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>345,36</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">LALLEMAND</span><span class="pc-cat">ESPECIALIDADES</span></div><div class="pc-name">ORGANIC WP (1KG)</div><div class="pc-ia">Trichoderma asperellum isolado URM 5911</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>207,04</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SIMBIOSE</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">StimuControl TS – 6x2Lt</div><div class="pc-ia">Trichoderma harzianum CCT7589 – Fungicida de solo (somente TS), 1x10^9</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>157,72</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SIMBIOSE</span><span class="pc-cat">ESPECIALIDADES</span></div><div class="pc-name">STIMUCONTROL TS – 6X2LT</div><div class="pc-ia">TRICHODERMA HARZIANUM CCT7589 – FUNGICIDA DE SOLO (SOMENTE TS), 1X10^9</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>148,58</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SIMBIOSE</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">StimuControl S - 5L</div><div class="pc-ia">Trichoderma harzianum CCT7589 – Fungicida de solo, 1x10^9</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>70,86</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SIMBIOSE</span><span class="pc-cat">ESPECIALIDADES</span></div><div class="pc-name">STIMUCONTROL S - 5L</div><div class="pc-ia">TRICHODERMA HARZIANUM CCT7589 – FUNGICIDA DE SOLO, 1X10^9</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>70,86</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SIMBIOSE</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">StimuControl Evolution S - 5L</div><div class="pc-ia">Trichoderma harzianum – Fungicida de solo (mofo), 4x10^9</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>154,29</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SIMBIOSE</span><span class="pc-cat">ESPECIALIDADES</span></div><div class="pc-name">STIMUCONTROL EVOLUTION S - 5L</div><div class="pc-ia">TRICHODERMA HARZIANUM – FUNGICIDA DE SOLO (MOFO), 4X10^9</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>170,30</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">OURO FINO</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">ARBUST 20 L</div><div class="pc-ia">TRICLOPIR</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>49,15</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">TECNOMIL</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">TOPINAM- 20L</div><div class="pc-ia">TRICLOPIR</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>45,72</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">RAINBOW</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">TRICLOMAX</div><div class="pc-ia">TRICLOPIR</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>47,55</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">NORTOX</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">TRICLOPIR NORTOX 20L</div><div class="pc-ia">TRICLOPIR</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>46,29</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">SYNGENTA</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">MODDUS 250EC</div><div class="pc-ia">TRINAXAPAQUE- ETILICO</div><div class="pc-price-row"></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">ROVENSA</span><span class="pc-cat">ESPECIALIDADES</span></div><div class="pc-name">WETCIT GOLD (12X1)</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>76,58</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">ROVENSA</span><span class="pc-cat">ESPECIALIDADES</span></div><div class="pc-name">WETCIT GOLD (1X1000)</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>56,80</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">ROVENSA</span><span class="pc-cat">ESPECIALIDADES</span></div><div class="pc-name">WETCIT GOLD (1X20)</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>61,49</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">ROVENSA</span><span class="pc-cat">ESPECIALIDADES</span></div><div class="pc-name">WETCIT GOLD (1X200)</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>59,26</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">ROVENSA</span><span class="pc-cat">ESPECIALIDADES</span></div><div class="pc-name">WETCIT GOLD (4X5)</div><div class="pc-price-row"><span class="pc-price"><span class="cur">R$</span>64,80</span></div></div><div class="pcard"><div class="pc-top"><span class="pc-fab">FMC</span><span class="pc-cat">DEFENSIVOS</span></div><div class="pc-name">HERO 5L</div><div class="pc-ia">ZETA-CIPERMETRINA; BIFENTRINA</div><div class="pc-price-row"></div></div></div></div>
+  </div>
+</main>
+</div>
+
+<div class="panel" id="cotacaoView">
+  <main>
+    <div class="wrap">
+      <h2 class="section-title">Dados da cotação</h2>
+      <div class="section-sub">Preencha o cliente, a fazenda e a condição de pagamento.</div>
+      <div class="cot-head">
+        <div class="cot-field">
+          <label for="cotCliente">Cliente</label>
+          <input id="cotCliente" type="text" placeholder="Nome do cliente">
+        </div>
+        <div class="cot-field">
+          <label for="cotCpf">CPF / CNPJ</label>
+          <input id="cotCpf" type="text" placeholder="Documento">
+        </div>
+        <div class="cot-field">
+          <label for="cotFazenda">Fazenda</label>
+          <input id="cotFazenda" type="text" placeholder="Nome da fazenda">
+        </div>
+        <div class="cot-field">
+          <label for="cotMun">Município / UF</label>
+          <input id="cotMun" type="text" placeholder="Cidade / UF">
+        </div>
+        <div class="cot-field">
+          <label for="cotPagSel">Condição de pagamento</label>
+          <select id="cotPagSel" class="pagsel"></select>
+        </div>
+        <div class="cot-field">
+          <label for="cotData">Data</label>
+          <input id="cotData" type="text" readonly>
+        </div>
+      </div>
+
+      <h2 class="section-title">Adicionar produtos</h2>
+      <div class="section-sub">Busque e clique no produto para incluir na cotação.</div>
+      <div class="cot-add">
+        <div class="search" style="flex:1;min-width:220px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <input id="cotBusca" type="text" placeholder="Digite o nome do produto, princípio ativo ou fabricante...">
+        </div>
+      </div>
+      <div id="cotSug" class="cot-sug"></div>
+
+      <h2 class="section-title" style="margin-top:26px">Itens da cotação</h2>
+      <div class="cot-tbl-wrap">
+        <table class="cot">
+          <thead><tr>
+            <th>Produto</th>
+            <th style="text-align:center">Qtd</th>
+            <th style="text-align:right">Preço sugerido</th>
+            <th style="text-align:right">Preço cotação</th>
+            <th style="text-align:right">Subtotal</th>
+            <th></th>
+          </tr></thead>
+          <tbody id="cotBody"></tbody>
+        </table>
+      </div>
+      <div class="cot-total" id="cotTotal"></div>
+      <div class="cot-actions">
+        <button class="btn" id="cotSalvar">Salvar cotação</button>
+        <button class="btn ghost" id="cotLimpar">Limpar</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="panel" id="minhasView">
+  <main>
+    <div class="wrap">
+      <h2 class="section-title">Minhas Cotações</h2>
+      <div class="section-sub" id="minhasSub">Cotações salvas por você.</div>
+      <div class="mc-list" id="mcList"></div>
+    </div>
+  </main>
+</div>
+
+<div class="panel" id="margemView">
+  <main>
+    <div class="wrap">
+      <div class="note">
+        <b>Como o preço é calculado:</b> o custo tem uma data de vencimento (quando a Setec paga o fornecedor). Se o cliente paga <b>antes</b> dessa data, o custo é trazido a valor presente com desconto de <b>1% ao mês</b> — por isso o preço à vista é menor. Depois disso é aplicada a margem.<br>
+        <b>Fórmula:</b> preço = [ custo ÷ (1 + taxa)<sup>meses até o vencimento</sup> ] ÷ (1 − margem)
+      </div>
+
+      <h2 class="section-title">Taxa financeira e margem geral</h2>
+      <div class="section-sub">Valem para todos os produtos, salvo exceções definidas abaixo.</div>
+      <div class="box">
+        <label for="taxaIn">Taxa mensal:</label>
+        <div class="pct"><input id="taxaIn" type="text" inputmode="decimal" value="1"><span>%</span></div>
+        <label for="mgGlobal" style="margin-left:12px">Margem padrão:</label>
+        <div class="pct"><input id="mgGlobal" type="text" inputmode="decimal" value="20"><span>%</span></div>
+        <button class="btn" id="aplicarGlobal">Aplicar a todos</button>
+      </div>
+
+      <h2 class="section-title">Margem por fabricante</h2>
+      <div class="section-sub">Margem padrão de cada fabricante.</div>
+      <div class="mg-tbl-wrap">
+        <table class="mg">
+          <thead><tr><th>Fabricante</th><th>Produtos</th><th style="text-align:right">Margem</th></tr></thead>
+          <tbody id="mgFabBody"></tbody>
+        </table>
+      </div>
+
+      <h2 class="section-title">Por produto: margem e vencimento do custo</h2>
+      <div class="section-sub">Ajuste individual. O vencimento é a data em que a Setec paga o fornecedor (formato MM/AAAA).</div>
+      <div class="ctrl-row" style="margin-bottom:12px">
+        <div class="search" style="flex:1">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <input id="mgQ" type="text" placeholder="Filtrar produto...">
+        </div>
+        <select id="mgFabFilter"><option value="ALL">Todos fabricantes</option></select>
+      </div>
+      <div class="mg-tbl-wrap">
+        <table class="mg">
+          <thead><tr>
+            <th>Fabricante</th><th>Produto</th>
+            <th style="text-align:center">Venc. custo</th>
+            <th style="text-align:right">Margem</th>
+            <th style="text-align:right">Preço (cond. atual)</th>
+          </tr></thead>
+          <tbody id="mgProdBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="login-bg" id="loginBg">
+  <div class="login-card">
+    <h3>Entrar como consultor</h3>
+    <p>Selecione seu nome para acessar suas cotações.</p>
+    <label for="loginUser">Usuário</label>
+    <select id="loginUser"></select>
+    <input id="loginPass" type="password" style="display:none">
+    <div class="login-err" id="loginErr">Selecione um consultor válido.</div>
+    <button class="btn" id="loginBtn">Entrar</button>
+  </div>
+</div>
+
+<div class="ped-bg" id="pedBg">
+  <div class="ped-modal">
+    <div class="ped-bar no-print">
+      <button class="btn" id="pedImprimir">Imprimir / Salvar PDF</button>
+      <button class="btn" id="pedCompartilhar">Compartilhar</button>
+      <button class="btn ghost" id="pedFechar">Fechar</button>
+    </div>
+    <div class="ped-scroll"><div id="pedContent"></div></div>
+  </div>
+</div>
+
+<footer><div class="wrap">Setec Agro · JSM Group — Lista de Preços 26/27 · Valores em R$ sujeitos a alteração sem aviso prévio</div></footer>
+
+<script>
+const PRODUTOS = [{"cat": "DEFENSIVOS", "fab": "ALBAUGH", "prod": "EXEMPLO", "ia": "2,4 D", "custo": 18.42, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "ALTA", "prod": "FIELD- 20 L", "ia": "2,4 D", "custo": 17.5, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "NORTOX", "prod": "ABAMECTIN 72 EC NORTOX", "ia": "ABAMECTINA 72", "custo": 64.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "NORTOX", "prod": "ALLORA", "ia": "ACEFATO", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "RAINBOW", "prod": "WEXITE", "ia": "ACEFATO", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SIPCAM", "prod": "CEFANOL GOLD- 8X3 KG", "ia": "ACEFATO", "custo": 40.99, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "NORTOX", "prod": "ACETAMIPRID NORTOX", "ia": "ACETAMIPRID", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "RAINBOW", "prod": "ACEGOL 12X1", "ia": "ACETAMIPRID", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "RAINBOW", "prod": "ACEMIP 4X5", "ia": "ACETAMIPRID", "custo": 24.44, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "RAINBOW", "prod": "ACEWAY", "ia": "ACETAMIPRIDO + BIFENTRINA", "custo": 81.328, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "OURO FINO", "prod": "AUTENTICOBR 20KG", "ia": "Acetamiprido", "custo": 25.5, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "ALBAUGH", "prod": "AFIADO", "ia": "ACETAMIPRIDO + BIFENTRINA", "custo": 88.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "TECNOMIL", "prod": "ELIPSE 4X5", "ia": "ACETAMIPRIDO + BIFENTRINA", "custo": 80.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "ALBAUGH", "prod": "ULTIMATO SC 20L", "ia": "ATRAZINA", "custo": 17.3, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SYNGENTA", "prod": "PROOF", "ia": "ATRAZINA", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SYNGENTA", "prod": "PRIMESTRA GOLD", "ia": "ATRAZINA + S-METOLACLORO", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "PILARQUIM", "prod": "BLOQUEO 10 KG", "ia": "ATRAZINA 900 WG", "custo": 28.25, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SYNGENTA", "prod": "ELATUS", "ia": "AZOXISTROBINA + BENZOVINDIFLUPIR", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SYNGENTA", "prod": "PRIORI XTRA- 20 L", "ia": "AZOXISTROBINA + CIPROCONAZOL", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SIPCAM", "prod": "VITENE", "ia": "AZOXISTROBINA + DIFENOCONAZOL", "custo": 130.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SYNGENTA", "prod": "PRIORI TOP", "ia": "AZOXISTROBINA + DIFENOCONAZOL", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "NORTOX", "prod": "TEBUCO A NORTOX", "ia": "AZOXISTROBINA + TEBUCONAZOL", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "OURO FINO", "prod": "TEBURAZ 20 L", "ia": "AZOXISTROBINA + TEBUCONAZOL", "custo": 43.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "TECNOMIL", "prod": "DESALI 4X5", "ia": "AZOXITROBINA + BENZOVINDIFLUPIR", "custo": 313.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SIMBIOSE", "prod": "NemaControl SUPER 6x2Lt", "ia": "Bacillus amyloliquefaciens BS10 1x10^10 - Nematoides", "custo": 510.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SIMBIOSE", "prod": "Bt Control 1x10Lt", "ia": "Bacillus thuringiensis CCT1306 - Complexo lagartas, 17% ativo", "custo": 57.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SYNGENTA", "prod": "ARVÁTICO- 4X5 L", "ia": "BACILLUS VELEZENSIS", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SIMBIOSE", "prod": "EficazControl -6x2 Lt", "ia": "Bacillus velezensis 2x10^9/ml e Paenibacillus ottowi 2x10^9/ml - Fung. de solo", "custo": 360.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SIMBIOSE", "prod": "FrontierControl - 5L", "ia": "Bacillus velezensis LABIM 40 5X10^9 - Fungicida parte aérea", "custo": 79.2, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SIMBIOSE", "prod": "VirControl Sf – 6x1 kg", "ia": "Baculovirurs - Lagarta Spodoptera", "custo": 415.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SIMBIOSE", "prod": "FlyControl – 6x2Lt", "ia": "Beauveria bassiana BB15 - Cigarrinha milho 2x10^9", "custo": 178.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SYNGENTA", "prod": "PROCLAIM 50", "ia": "BENZOATO DE EMAMECTINA", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SYNGENTA", "prod": "MITRION", "ia": "BENZOVINDIFLUPIR + PROTIOCONAZOL", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "RAINBOW", "prod": "COFENRIN", "ia": "BIFENTRINA 400", "custo": 80.912, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "NORTOX", "prod": "BIFENTRINA A NORTOX", "ia": "BIFENTRINA", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "FMC", "prod": "TALISMAN 5L", "ia": "BIFENTRINA + CARBOSSULFANO", "custo": 57.81, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "PILARQUIM", "prod": "AMETISTA (FMC)- 10 L", "ia": "BIFENTRINA + ZETACIPERMETRINA", "custo": 125.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "FMC", "prod": "TALSTAR 400 5L", "ia": "BIFENTRINA 400", "custo": 112.38, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "TECNOMIL", "prod": "ORSA 400 EC", "ia": "BIFENTRINA 400", "custo": 78.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "RAINBOW", "prod": "POLY MILAT", "ia": "BIOESTIMULANTE", "custo": 111.33200000000001, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "RAINBOW", "prod": "SEAROOT", "ia": "BIOESTIMULANTE", "custo": 45.812000000000005, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "RAINBOW", "prod": "TRIGROW", "ia": "BIOESTIMULANTE", "custo": 63.492000000000004, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SIMBIOSE", "prod": "Simbiose Nod 200 ds", "ia": "Bradyrhizobium japonicum", "custo": 1.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "FMC", "prod": "AURORA 4X5", "ia": "CARFETRAZONA", "custo": 307.55, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "PILARQUIM", "prod": "CONVERGE (FMC)- 4X5 L", "ia": "CARFETRAZONA", "custo": 275.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "RAINBOW", "prod": "FULL GUARD", "ia": "CARFETRAZONA", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "TECNOMIL", "prod": "HAMPTON EC- 4X5 L", "ia": "CARFETRAZONA", "custo": 260.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "FMC", "prod": "BENEVIA 4X5", "ia": "CIANTRANILIPROLE", "custo": 215.04, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SYNGENTA", "prod": "FORTENZA- 4X5 L", "ia": "CIANTRANILIPROLE", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SYNGENTA", "prod": "VICTRATO", "ia": "CICLOBUTRIFLURAM", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "NORTOX", "prod": "CIPERMETRINA NORTOX", "ia": "CIPERMETRINA EC", "custo": 32.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "ALBAUGH", "prod": "FRENO", "ia": "CLETODIM", "custo": 31.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "ALTA", "prod": "CARTAGO- 20 L", "ia": "CLETODIM", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "RAINBOW", "prod": "GRASIDIN", "ia": "CLETODIM", "custo": 29.692, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SYNGENTA", "prod": "POQUER", "ia": "CLETODIM", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SYNGENTA", "prod": "POQUER- 20 L", "ia": "CLETODIM", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "NORTOX", "prod": "CLETODIN OLEUM", "ia": "CLETODIM + OLEO", "custo": 33.3, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SYNGENTA", "prod": "TOPIK 240", "ia": "CLODINAFOPE + PROGARGLI", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SYNGENTA", "prod": "TOPIK", "ia": "CLODINAFOPE -PROGARGIL", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "FMC", "prod": "REATOR 20L", "ia": "CLOMAZONA 360", "custo": 50.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SYNGENTA", "prod": "INSTIVO", "ia": "CLORANTRANILIPOLE + ABAMECTINA", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "FMC", "prod": "PREMIO 5L", "ia": "CLORANTRANILIPROLE", "custo": 388.7, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "FMC", "prod": "PREMIO STAR 5L", "ia": "CLORANTRANILIPROLE + BIFENTRINA", "custo": 166.29, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "NORTOX", "prod": "TEMPUS NORTOX", "ia": "CLORANTRANILIPROLE + CLORPIRIFÓS", "custo": 61.2, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "NORTOX", "prod": "TYPHOON NORTOX 4X5", "ia": "CLORANTRANILIPROLE + METOMIL", "custo": 50.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "TECNOMIL", "prod": "OPTERA PRO/ COREGIS- 4X5 L", "ia": "CLORANTRANILIPROLE)", "custo": 260.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "ALTA", "prod": "KILLIGAN- 20 L", "ia": "CLORFENAPIR", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "NORTOX", "prod": "CLORFENAPIR NORTOX", "ia": "CLORFENAPIR", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "RAINBOW", "prod": "KILLIGAN", "ia": "CLORFENAPIR", "custo": 40.56, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "TECNOMIL", "prod": "ADVER", "ia": "CLORFENAPIR", "custo": 39.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "PILARQUIM", "prod": "CLIPPER SINON- 48 X 0,3", "ia": "CLORIMURON", "custo": 50.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "PILARQUIM", "prod": "PILARICH- 20 L", "ia": "CLOROTALONIL", "custo": 24.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SIPCAM", "prod": "ECHO- 20 L", "ia": "CLOROTALONIL", "custo": 26.5, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SYNGENTA", "prod": "BRAVONIL 720", "ia": "CLOROTALONIL", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "RAINBOW", "prod": "ZERRUST MIXX", "ia": "CLOROTALONIL + PICOXISTROBINA + TEBUCONAZOL", "custo": 62.712, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "TECNOMIL", "prod": "CLORPIRIFOS 48 EC GHARDA- 20L", "ia": "CLORPIRIFOS", "custo": 28.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "WILLIWOOD", "prod": "WILPHOS", "ia": "CLORPIRIFOS", "custo": 26.9, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "OURO FINO", "prod": "CAPATAZBR BL", "ia": "CLORPIRIFOS", "custo": 28.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SYNGENTA", "prod": "POLO- 20L", "ia": "DIAFENTIURON", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SYNGENTA", "prod": "ALADE", "ia": "DIFENO + CIPROC+ BENZOVINDIFLUPIR", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "PILARQUIM", "prod": "AGROTOP- 4X5 L", "ia": "DIFENOCONAZOL", "custo": 38.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SYNGENTA", "prod": "CYPRESS 400 EC", "ia": "DIFENOCONAZOL + CIPROCONAZOL", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "FMC", "prod": "ONSUVA 5L", "ia": "DIFENOCONAZOL + FLUINDAPIR", "custo": 300.96, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SYNGENTA", "prod": "MIRAVIS DUO", "ia": "DIFENOCONAZOL + PIDIFLUMETOFEM", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SOLUS", "prod": "STIVA", "ia": "DIFENOCONAZOL 250", "custo": 39.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "ALBAUGH", "prod": "EGAN", "ia": "DIQUATE", "custo": 22.64, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "RAINBOW", "prod": "BLOWOUT", "ia": "DIQUATE", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SYNGENTA", "prod": "REGLONE", "ia": "DIQUATE", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "ASCENZA", "prod": "EXTREME 12X1", "ia": "ESPINETORAN", "custo": 642.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SIPCAM", "prod": "FUJIMITE- 12X1", "ia": "FENPIROXIMATO", "custo": 69.5, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SYNGENTA", "prod": "SEEKER", "ia": "FENPROPIDINA", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "ALTA", "prod": "EVENTRA- 10X1 KG", "ia": "FIPRONIL 800", "custo": 270.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "TECNOMIL", "prod": "LANEX 800 WG- 4X5 KG", "ia": "FIPRONIL 800", "custo": 270.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "NORTOX", "prod": "FLUAZINAM NORTOX 500 SC", "ia": "FLUAZINAM", "custo": 71.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "RAINBOW", "prod": "WINOUT XTRA", "ia": "FLUAZINAM", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "WILLIWOOD", "prod": "FLUAZINAM 500 SC", "ia": "FLUAZINAM", "custo": 74.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "ALBAUGH", "prod": "ORIGAN 500 SC", "ia": "FLUAZINAM", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SIPCAM", "prod": "TORINO- 4X5 L TSI", "ia": "FLUAZINAM + TIOFANATO METILICO", "custo": 80.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "ALTA", "prod": "VERACE- 4X5 L", "ia": "FLUMIOXAZINA", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "RAINBOW", "prod": "SUNGAIN XTRA", "ia": "FLUMIOXAZINA", "custo": 135.20000000000002, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "TECNOMIL", "prod": "MAGMA 500 SC- 4X5 L", "ia": "FLUMIOXAZINA", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SYNGENTA", "prod": "FLEX- 4X5 L", "ia": "FOMESAFEM", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SYNGENTA", "prod": "EDDUS", "ia": "FOMESAFEM + S-METOLACLORO", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "ALBAUGH", "prod": "PRECISO XK", "ia": "GLIFOSATO", "custo": 23.21, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "ALTA", "prod": "ZAFERA- 20 L", "ia": "GLIFOSATO", "custo": 27.5, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "RAINBOW", "prod": "SOLDIER", "ia": "GLIFOSATO", "custo": 29.068, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SYNGENTA", "prod": "ZAPP QI", "ia": "GLIFOSATO", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "TECNOMIL", "prod": "TECNUP MAX- 20KG", "ia": "GLIFOSATO", "custo": 28.6, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "ALTA", "prod": "AUDACE- 20 L", "ia": "GLUFOSINATO", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "ALTA", "prod": "AUDACE 850 WG- 20 KG", "ia": "GLUFOSINATO", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "OURO FINO", "prod": "OFF ROAD 20 L", "ia": "GLUFOSINATO", "custo": 16.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "RAINBOW", "prod": "TRUSINATE XTRA", "ia": "GLUFOSINATO", "custo": 52.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "TECNOMIL", "prod": "LOYER 200 TM- 20 L", "ia": "GLUFOSINATO", "custo": 14.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "NORTOX", "prod": "GLUFOSINATO 880 NORTOX", "ia": "GLUFOSINATO 880", "custo": 52.5, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "RAINBOW", "prod": "GLINT FULL", "ia": "HALOXIFOPE", "custo": 101.244, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "RAINBOW", "prod": "SOYACLEAN", "ia": "IMAZETAPYR", "custo": 27.040000000000003, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "ALTA", "prod": "TAUS 10X1", "ia": "IMIDACLOPRID", "custo": 65.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "RAINBOW", "prod": "KINGPRIDO XTRA", "ia": "IMIDACLOPRID", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "WILLIWOOD", "prod": "CUTLASS", "ia": "IMIDACLOPRID", "custo": 72.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SIMBIOSE", "prod": "Simbiose MAIZ- 100 ds", "ia": "Inoculante gramínea Azospirillum brasiliense 2,5x10^8 (abv5 e abv6)", "custo": 3.4, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SIMBIOSE", "prod": "Solubphos – 6x2Lt", "ia": "Inoculante solubilizador de fósforo 4x10a9 B. Subtilis  BRM2084 e B. Megaterium BRM119", "custo": 500.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SIMBIOSE", "prod": "IsaControl 2x5 lt", "ia": "Isaria fumosorosea cepa ESALQ 4778 3x10^9/ml", "custo": 130.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SYNGENTA", "prod": "VERDAVIS", "ia": "ISOCICLOSERAM + LAMBDA CIALOTINA", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "PILARQUIM", "prod": "SAMURAI 10 LT", "ia": "LAMBDA + CIALOTRINA", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SYNGENTA", "prod": "AMPLIGO", "ia": "LAMBDA CIALOTRINA + CLORANTRANILIPROLE", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SOLUS", "prod": "JUDOKA SUPER", "ia": "LAMBDA CIALOTRINA 250", "custo": 44.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "RAINBOW", "prod": "LASTING CS", "ia": "LAMBIDA CIALOTRINA", "custo": 49.14, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "ALTA", "prod": "TAGGER 4X5", "ia": "LUFENURON", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "PILARQUIM", "prod": "PILARVANT 105 SC", "ia": "LUFENURON", "custo": 45.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "RAINBOW", "prod": "ROFEN FULL", "ia": "LUFENURON", "custo": 46.384, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SYNGENTA", "prod": "MATCH EC", "ia": "LUFENURON", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SOLUS", "prod": "BOX 50", "ia": "LUFENURON 50", "custo": 25.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "RAINBOW", "prod": "RAINZEB", "ia": "MANCOZEB", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "TECNOMIL", "prod": "TRISEB 10 L", "ia": "MANCOZEB", "custo": 26.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "RAINBOW", "prod": "MESTRANG", "ia": "MESOTRIONA", "custo": 51.532000000000004, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SYNGENTA", "prod": "CALARIS", "ia": "MESOTRIONA + ATRAZINA", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SIMBIOSE", "prod": "MethaControl Evolution - 5L", "ia": "Metarhizium anisopliae IBC425 - Percevejo castanho, 2x10^9", "custo": 125.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "ALBAUGH", "prod": "BAZUKA", "ia": "METOMIL", "custo": 18.2, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "OURO FINO", "prod": "BRILHANTE BR 20 L", "ia": "METOMIL", "custo": 18.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "RAINBOW", "prod": "METOMY", "ia": "METOMIL", "custo": 72.8, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SIPCAM", "prod": "ANCOSAR- 20 L", "ia": "MSMA", "custo": 28.5, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SYNGENTA", "prod": "OCHIMA- 4X5 L ÓLEO", "ia": "OLEO", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SIPCAM", "prod": "CUPROZEB- 2X10 KG", "ia": "OXICLORETO DE COBRE + MANZOZEB", "custo": 58.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "RAINBOW", "prod": "KROMSTAR", "ia": "PICOXISTROBINA + CIPROCONAZOL", "custo": 98.12400000000001, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "ALTA", "prod": "AVARIS- 4X5 L", "ia": "PICOXISTROBINA + PROTIOCONAZOL", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SYNGENTA", "prod": "MIRAVIS PRO", "ia": "PIDIFLUMEFEM + PROTIOCONAZOL", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "ALBAUGH", "prod": "PORCEL", "ia": "PIRIPROXIFEN", "custo": 30.3, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "ALTA", "prod": "COUGAR 4X5", "ia": "PIRIPROXIFEN", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "TECNOMIL", "prod": "VALLEX- 4X5", "ia": "PIRIPROXIFEN", "custo": 30.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "NORTOX", "prod": "PIRIPROXIFEN NORTOX", "ia": "PIRIPROXIFEN 200", "custo": 53.5, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "OURO FINO", "prod": "PARRUDOBR 20L", "ia": "PROCIMIDONA", "custo": 85.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SYNGENTA", "prod": "POLYTRIN EC", "ia": "PROFENOFÓS + CIPERMETRINA", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SYNGENTA", "prod": "CURYOM 4X5", "ia": "PROFENOFÓS + LUFENURON", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SYNGENTA", "prod": "TILT- 4X5 L", "ia": "PROPICONAZOL", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SYNGENTA", "prod": "SCORE FLEXI", "ia": "PROPICONAZOL + DIFENOCONAZOL", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "TECNOMIL", "prod": "PROSOY TRIO- 10L", "ia": "PROTIOCONAZOL + PICOXISTROBINA + MANCOZEB", "custo": 42.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "NORTOX", "prod": "SCUDEIRO NORTOX", "ia": "PROTIOCONAZOL + TEBUCONAZOL", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "TECNOMIL", "prod": "TENOX 4X5L", "ia": "PROTIOCONAZOL + TRIFLOXISTROBINA", "custo": 130.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "RAINBOW", "prod": "SAFENCIL", "ia": "SAFLUFENACIL (HEAT)", "custo": 981.916, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SYNGENTA", "prod": "EDDUS- 4X5", "ia": "S-METALACLOR + FOMESAFEN", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "TECNOMIL", "prod": "METHOS", "ia": "S-METOLACLOR", "custo": 30.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "RAINBOW", "prod": "METRARO 20 L", "ia": "S-METOLACLOR", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SYNGENTA", "prod": "DUAL GOLD 960", "ia": "S-METOLACLORO", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "ALBAUGH", "prod": "ODIN", "ia": "TEBUCONAZOL", "custo": 33.8, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "ALTA", "prod": "SEVEN- 4X5 L", "ia": "TEBUCONAZOL", "custo": 31.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "NORTOX", "prod": "TEBUCO 430 SC", "ia": "TEBUCONAZOL", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SIPCAM", "prod": "FEZAN GOLD- 20 L", "ia": "TEBUCONAZOL + CLOROTALONIL", "custo": 34.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "NORTOX", "prod": "TERBUTILAZINA NORTOX 20L", "ia": "TERBUTILAZINA", "custo": 24.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SIPCAM", "prod": "CLICK", "ia": "TERBUTILAZINA", "custo": 25.37, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SIPCAM", "prod": "CLICK PRO- 20 L", "ia": "TERBUTILAZINA + MESOTRIONA", "custo": 54.01, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "OURO FINO", "prod": "TERRAD'OR 339 SC 5L", "ia": "TIAFENACIL", "custo": 410.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SYNGENTA", "prod": "ACTARA 250", "ia": "TIAMETOXAM", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SYNGENTA", "prod": "ACTARA 750", "ia": "TIAMETOXAM", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SYNGENTA", "prod": "ENGEO PLENO", "ia": "TIAMETOXAM + LAMBDA CIALOTRINA", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "TECNOMIL", "prod": "PLATINUM NEO- 4X5 L", "ia": "TIAMETOXAM + LAMBDA CIALOTRINA", "custo": 90.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SYNGENTA", "prod": "CRUISER- 20 L", "ia": "TIAMETOXAN", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SYNGENTA", "prod": "DURIVO- 20 L", "ia": "TIAMETOXAN +  CLORANTRANILIPROLE", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SIPCAM", "prod": "SUPPORT- 20 L", "ia": "TIOFANATO METILICO", "custo": 26.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "NORTOX", "prod": "TIOFANATO NORTOX 20L", "ia": "TIOFANATO METILICO 500", "custo": 22.5, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SIMBIOSE", "prod": "StimuControl Evolution S - 5L", "ia": "Trichoderma harzianum – Fungicida de solo (mofo), 4x10^9", "custo": 135.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SIMBIOSE", "prod": "StimuControl TS – 6x2Lt", "ia": "Trichoderma harzianum CCT7589 – Fungicida de solo (somente TS), 1x10^9", "custo": 138.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SIMBIOSE", "prod": "StimuControl S - 5L", "ia": "Trichoderma harzianum CCT7589 – Fungicida de solo, 1x10^9", "custo": 62.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "NORTOX", "prod": "TRICLOPIR NORTOX 20L", "ia": "TRICLOPIR", "custo": 40.5, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "OURO FINO", "prod": "ARBUST 20 L", "ia": "TRICLOPIR", "custo": 43.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "RAINBOW", "prod": "TRICLOMAX", "ia": "TRICLOPIR", "custo": 41.6, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "TECNOMIL", "prod": "TOPINAM- 20L", "ia": "TRICLOPIR", "custo": 40.0, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "SYNGENTA", "prod": "MODDUS 250EC", "ia": "TRINAXAPAQUE- ETILICO", "custo": null, "venc": "04/2027"}, {"cat": "DEFENSIVOS", "fab": "FMC", "prod": "HERO 5L", "ia": "ZETA-CIPERMETRINA; BIFENTRINA", "custo": null, "venc": "04/2027"}, {"cat": "ESPECIALIDADES", "fab": "AGRICHEM", "prod": "AGRI K 10 LT", "ia": "483,0 g/L K²O", "custo": 33.01, "venc": "04/2027"}, {"cat": "ESPECIALIDADES", "fab": "AGRICHEM", "prod": "BIG RED 10 LT", "ia": "491 g/L Cu", "custo": 98.51, "venc": "04/2027"}, {"cat": "ESPECIALIDADES", "fab": "AGRICHEM", "prod": "BOOSTER INFINITY 10 LT", "ia": "6,66 g/L CU , 4,26 g/L MO, 32 g/L ZN", "custo": 132.05, "venc": "04/2027"}, {"cat": "ESPECIALIDADES", "fab": "AGRICHEM", "prod": "BOOSTER PRO 20 LT", "ia": "24,4 g/L Mo; 36,6 g/L Zn", "custo": 104.8, "venc": "04/2027"}, {"cat": "ESPECIALIDADES", "fab": "AGRICHEM", "prod": "BORO SUPER 10 LT", "ia": "159,8 g/L B;", "custo": 22.0, "venc": "04/2027"}, {"cat": "ESPECIALIDADES", "fab": "AGRICHEM", "prod": "CAL SUPER 10 LT", "ia": "", "custo": 22.18, "venc": "04/2027"}, {"cat": "ESPECIALIDADES", "fab": "AGRICHEM", "prod": "CONCENTRAT FIX 5 LT", "ia": "30,24 g/L Co; 352 g/l Mo", "custo": 220.08, "venc": "04/2027"}, {"cat": "ESPECIALIDADES", "fab": "AGRICHEM", "prod": "CONCENTRAT MAG 10 LT", "ia": "304,5 g/L Mg; 4,3 g/L Zn", "custo": 40.87, "venc": "04/2027"}, {"cat": "ESPECIALIDADES", "fab": "AGRICHEM", "prod": "CONCENTRAT MN 10 LT", "ia": "331,80 g/L Mn", "custo": 31.44, "venc": "04/2027"}, {"cat": "ESPECIALIDADES", "fab": "AGRICHEM", "prod": "FERRIFLO 10 LT", "ia": "179,30 g/L N; 358,6 g/L Fe", "custo": 89.08, "venc": "04/2027"}, {"cat": "ESPECIALIDADES", "fab": "AGRICHEM", "prod": "FLUILFLEX MAX", "ia": "", "custo": null, "venc": "04/2027"}, {"cat": "ESPECIALIDADES", "fab": "AGRICHEM", "prod": "FREEFOS 10 LT", "ia": "518 g/L P²O; 158 g/L N", "custo": 25.15, "venc": "04/2027"}, {"cat": "ESPECIALIDADES", "fab": "AGRICHEM", "prod": "KMAX 10LT", "ia": "365 g/L K²O; 248,0 g/L S", "custo": 22.85, "venc": "04/2027"}, {"cat": "ESPECIALIDADES", "fab": "AGRICHEM", "prod": "MAXI ZINC 10LT", "ia": "1000 g/L Zn", "custo": 75.46, "venc": "04/2027"}, {"cat": "ESPECIALIDADES", "fab": "AGRICHEM", "prod": "NITAMIN 1000LT", "ia": "330 g/l N", "custo": 9.43, "venc": "04/2027"}, {"cat": "ESPECIALIDADES", "fab": "AGRICHEM", "prod": "NITAMIN 20 LT", "ia": "330 g/l N", "custo": null, "venc": "04/2027"}, {"cat": "ESPECIALIDADES", "fab": "AGRICHEM", "prod": "REFORCE ULTRA", "ia": "", "custo": 94.32, "venc": "04/2027"}, {"cat": "ESPECIALIDADES", "fab": "ROVENSA", "prod": "WETCIT GOLD (12X1)", "ia": "", "custo": 67.0, "venc": "04/2027"}, {"cat": "ESPECIALIDADES", "fab": "ROVENSA", "prod": "WETCIT GOLD (4X5)", "ia": "", "custo": 56.7, "venc": "04/2027"}, {"cat": "ESPECIALIDADES", "fab": "ROVENSA", "prod": "WETCIT GOLD (1X20)", "ia": "", "custo": 53.8, "venc": "04/2027"}, {"cat": "ESPECIALIDADES", "fab": "ROVENSA", "prod": "WETCIT GOLD (1X200)", "ia": "", "custo": 51.85, "venc": "04/2027"}, {"cat": "ESPECIALIDADES", "fab": "ROVENSA", "prod": "WETCIT GOLD (1X1000)", "ia": "", "custo": 49.7, "venc": "04/2027"}, {"cat": "ESPECIALIDADES", "fab": "ROVENSA", "prod": "MEGATRON (1X20)", "ia": "", "custo": 37.8, "venc": "04/2027"}, {"cat": "ESPECIALIDADES", "fab": "ROVENSA", "prod": "PREV-AM (4X5)", "ia": "", "custo": 59.0, "venc": "04/2027"}, {"cat": "ESPECIALIDADES", "fab": "ROVENSA", "prod": "AIR TRUCK (4X5)", "ia": "", "custo": 51.0, "venc": "04/2027"}, {"cat": "ESPECIALIDADES", "fab": "ROVENSA", "prod": "MEGAFAST (4X5)", "ia": "", "custo": 37.0, "venc": "04/2027"}, {"cat": "ESPECIALIDADES", "fab": "ROVENSA", "prod": "MEGAFAST (1X20)", "ia": "", "custo": 33.89, "venc": "04/2027"}, {"cat": "ESPECIALIDADES", "fab": "ROVENSA", "prod": "MEGA SOLVE (4X5)", "ia": "", "custo": 43.0, "venc": "04/2027"}, {"cat": "ESPECIALIDADES", "fab": "ROVENSA", "prod": "BIOCEL (12X1)", "ia": "", "custo": 140.0, "venc": "04/2027"}, {"cat": "ESPECIALIDADES", "fab": "ROVENSA", "prod": "PHOS-UP (1,5X10)", "ia": "", "custo": 420.0, "venc": "04/2027"}, {"cat": "ESPECIALIDADES", "fab": "ROVENSA", "prod": "MACROFOL S (1X20)", "ia": "", "custo": 18.9, "venc": "04/2027"}, {"cat": "ESPECIALIDADES", "fab": "SIMBIOSE", "prod": "SOLUBPHOS – 6X2LT", "ia": "INOCULANTE SOLUBILIZADOR DE FÓSFORO 4X10A9 B. SUBTILIS BRM2084 E B. MEGATERIUM BRM119", "custo": 519.0, "venc": "04/2027"}, {"cat": "ESPECIALIDADES", "fab": "SIMBIOSE", "prod": "EFICAZCONTROL -6X2 LT", "ia": "BACILLUS VELEZENSIS 2X10^9/ML E PAENIBACILLUS OTTOWI 2X10^9/ML - FUNG. DE SOLO", "custo": 400.0, "venc": "04/2027"}, {"cat": "ESPECIALIDADES", "fab": "SIMBIOSE", "prod": "NEMACONTROL SUPER 6X2LT", "ia": "BACILLUS AMYLOLIQUEFACIENS BS10 1X10^10 – NEMATOIDES", "custo": 526.0, "venc": "04/2027"}, {"cat": "ESPECIALIDADES", "fab": "SIMBIOSE", "prod": "STIMUCONTROL S - 5L", "ia": "TRICHODERMA HARZIANUM CCT7589 – FUNGICIDA DE SOLO, 1X10^9", "custo": 62.0, "venc": "04/2027"}, {"cat": "ESPECIALIDADES", "fab": "SIMBIOSE", "prod": "STIMUCONTROL TS – 6X2LT", "ia": "TRICHODERMA HARZIANUM CCT7589 – FUNGICIDA DE SOLO (SOMENTE TS), 1X10^9", "custo": 130.0, "venc": "04/2027"}, {"cat": "ESPECIALIDADES", "fab": "SIMBIOSE", "prod": "STIMUCONTROL EVOLUTION S - 5L", "ia": "TRICHODERMA HARZIANUM – FUNGICIDA DE SOLO (MOFO), 4X10^9", "custo": 149.0, "venc": "04/2027"}, {"cat": "ESPECIALIDADES", "fab": "SIMBIOSE", "prod": "SIMBIOSE MAIZ- 100 DS", "ia": "INOCULANTE GRAMÍNEA AZOSPIRILLUM BRASILIENSE 2,5X10^8 (ABV5 E ABV6)", "custo": 3.75, "venc": "04/2027"}, {"cat": "ESPECIALIDADES", "fab": "SIMBIOSE", "prod": "FLYCONTROL – 6X2LT", "ia": "BEAUVERIA BASSIANA BB15 - CIGARRINHA MILHO 2X10^9", "custo": 178.0, "venc": "04/2027"}, {"cat": "ESPECIALIDADES", "fab": "SIMBIOSE", "prod": "FRONTIERCONTROL - 5L", "ia": "BACILLUS VELEZENSIS LABIM 40 5X10^9 - FUNGICIDA PARTE AÉREA", "custo": 79.2, "venc": "04/2027"}, {"cat": "ESPECIALIDADES", "fab": "SIMBIOSE", "prod": "VIRCONTROL SF – 6X1 KG", "ia": "BACULOVIRURS - LAGARTA SPODOPTERA", "custo": 490.0, "venc": "04/2027"}, {"cat": "ESPECIALIDADES", "fab": "SIMBIOSE", "prod": "BT CONTROL 1X10LT", "ia": "BACILLUS THURINGIENSIS CCT1306 - COMPLEXO LAGARTAS, 17% ATIVO", "custo": 65.0, "venc": "04/2027"}, {"cat": "ESPECIALIDADES", "fab": "SIMBIOSE", "prod": "ISACONTROL 2X5 LT", "ia": "ISARIA FUMOSOROSEA CEPA ESALQ 4778 3X10^9/ML", "custo": 130.0, "venc": "04/2027"}, {"cat": "ESPECIALIDADES", "fab": "SIMBIOSE", "prod": "METHACONTROL EVOLUTION - 5L", "ia": "METARHIZIUM ANISOPLIAE IBC425 - PERCEVEJO CASTANHO, 2X10^9", "custo": 125.0, "venc": "04/2027"}, {"cat": "ESPECIALIDADES", "fab": "LALLEMAND", "prod": "BIOPROTECTOR", "ia": "", "custo": 114.0, "venc": "04/2027"}, {"cat": "ESPECIALIDADES", "fab": "LALLEMAND", "prod": "CRYSTAL SC (5LT)", "ia": "Bacillus thuringiensis subsp Thoworthy isdo 344", "custo": 203.8, "venc": "04/2027"}, {"cat": "ESPECIALIDADES", "fab": "LALLEMAND", "prod": "GRANADA (1KG)", "ia": "Beauveria bassiana 1x1010  UFC / g", "custo": 222.27, "venc": "04/2027"}, {"cat": "ESPECIALIDADES", "fab": "LALLEMAND", "prod": "Lal Guard Java", "ia": "Cordyceps javanica (por conta de taxonomia, isaria passou a se chamar cordyceps)", "custo": 283.0, "venc": "04/2027"}, {"cat": "ESPECIALIDADES", "fab": "LALLEMAND", "prod": "LALFIX NITRO 3L", "ia": "", "custo": 123.0, "venc": "04/2027"}, {"cat": "ESPECIALIDADES", "fab": "LALLEMAND", "prod": "LALRIZE AZOS (BO 4X3 LT)", "ia": "Azospirillum brasilense", "custo": 120.0, "venc": "04/2027"}, {"cat": "ESPECIALIDADES", "fab": "LALLEMAND", "prod": "LAL NIX RESSIST 1KG", "ia": "", "custo": 429.3, "venc": "04/2027"}, {"cat": "ESPECIALIDADES", "fab": "LALLEMAND", "prod": "LALSTIM NUTRI 20", "ia": "", "custo": 829.4, "venc": "04/2027"}, {"cat": "ESPECIALIDADES", "fab": "LALLEMAND", "prod": "ONIX (12X1 LT)", "ia": "Bacillus methylotrophicus UFPEDA 20", "custo": 202.17, "venc": "04/2027"}, {"cat": "ESPECIALIDADES", "fab": "LALLEMAND", "prod": "ORGANIC WP (1KG)", "ia": "Trichoderma asperellum isolado URM 5911", "custo": 181.15, "venc": "04/2027"}, {"cat": "ESPECIALIDADES", "fab": "LALLEMAND", "prod": "QUALITY TS (5X1KG)", "ia": "Trichoderma Asperellum 28%", "custo": 302.17, "venc": "04/2027"}, {"cat": "ESPECIALIDADES", "fab": "LALLEMAND", "prod": "RIZOS-BACILLUS (12X1LT) (4X5LT)", "ia": "Bacillus Subtilis", "custo": 202.17, "venc": "04/2027"}, {"cat": "ESPECIALIDADES", "fab": "LALLEMAND", "prod": "STARFIX SOJA (BO 4X3 )", "ia": "Bradyrhizobium japonicum 1x10*10 UFC/mL", "custo": 117.0, "venc": "04/2027"}];
+const FABRICANTES = ["AGRICHEM", "ALBAUGH", "ALTA", "ASCENZA", "FMC", "LALLEMAND", "NORTOX", "OURO FINO", "PILARQUIM", "RAINBOW", "ROVENSA", "SIMBIOSE", "SIPCAM", "SOLUS", "SYNGENTA", "TECNOMIL", "WILLIWOOD"];
+const MARGEM_DEFAULT=0.20;
+let TAXA=0.01; // 1% ao mês
+
+let margemFab={}; FABRICANTES.forEach(f=>margemFab[f]=MARGEM_DEFAULT);
+let margemProd={};
+PRODUTOS.forEach((p,i)=>p._i=i);
+
+const HOJE=new Date();
+let pagAno=HOJE.getFullYear(), pagMes=HOJE.getMonth()+1; // condição de pagamento escolhida
+
+let state={q:'',cat:'ALL',fab:'ALL',sort:'ia',view:'grid'};
+let mgState={q:'',fab:'ALL'};
+
+const norm=s=>(s||'').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+const esc=s=>(s||'').toString().replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const brl=n=>n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const MESES=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+
+function parseVenc(v){
+  if(!v) return null;
+  const m=/^(\d{1,2})\s*\/\s*(\d{4})$/.exec(String(v).trim());
+  if(!m) return null;
+  const mes=+m[1], ano=+m[2];
+  if(mes<1||mes>12) return null;
+  return {mes,ano};
+}
+function mesesEntre(a_ano,a_mes,b_ano,b_mes){ return (b_ano-a_ano)*12+(b_mes-a_mes); }
+function margemDe(p){
+  if(margemProd[p._i]!==undefined) return margemProd[p._i];
+  return margemFab[p.fab]!==undefined?margemFab[p.fab]:MARGEM_DEFAULT;
+}
+function precoVenda(p){
+  const c=p.custo; const v=parseVenc(p.venc);
+  if(!c||c<=0||!v) return null;           // sem custo ou sem vencimento => sem preço
+  const m=margemDe(p);
+  if(m>=1||m<0) return null;
+  const n=mesesEntre(pagAno,pagMes,v.ano,v.mes); // meses do pagamento até o vencimento
+  const vp=c/Math.pow(1+TAXA,n);                 // valor presente na data do pagamento
+  return vp/(1-m);
+}
+function fmtPct(m){return (m*100).toLocaleString('pt-BR',{maximumFractionDigits:2});}
+function parsePct(t){let v=(t||'').toString().replace('%','').replace(',','.').trim();const n=parseFloat(v);if(isNaN(n)||n<0||n>=100)return null;return n/100;}
+
+/* opções de pagamento: à vista + 24 meses à frente */
+function buildPagSel(){
+  const sel=document.getElementById('pagSel');
+  const LIM_ANO=2027, LIM_MES=4; // prazo máximo: abril/2027
+  const maxK=mesesEntre(HOJE.getFullYear(),HOJE.getMonth()+1,LIM_ANO,LIM_MES);
+  let html='';
+  for(let k=0;k<=Math.max(0,maxK);k++){
+    const d=new Date(HOJE.getFullYear(),HOJE.getMonth()+k,1);
+    const a=d.getFullYear(), m=d.getMonth()+1;
+    const label = k===0 ? 'À vista' : ('Pagto '+MESES[m-1]+'/'+a);
+    html+='<option value="'+a+'-'+m+'"'+(k===0?' selected':'')+'>'+label+'</option>';
+  }
+  sel.innerHTML=html;
+  sel.onchange=e=>{
+    const [a,m]=e.target.value.split('-').map(Number);
+    pagAno=a; pagMes=m;
+    render(); renderMargemProd();
+  };
+}
+function updatePagBar(){ /* faixa removida da tela inicial */ }
+
+/* ===== LISTA ===== */
+function filtered(){
+  let r=PRODUTOS.filter(p=>{
+    if(state.cat!=='ALL'&&p.cat!==state.cat)return false;
+    if(state.fab!=='ALL'&&p.fab!==state.fab)return false;
+    if(state.q){const q=norm(state.q);if(!(norm(p.prod).includes(q)||norm(p.ia).includes(q)||norm(p.fab).includes(q)))return false;}
+    return true;
+  });
+  const s=state.sort;
+  r.sort((a,b)=>{
+    if(s==='price-asc'||s==='price-desc'){
+      const av=precoVenda(a),bv=precoVenda(b);
+      const A=av?av:(s==='price-asc'?1e12:-1),B=bv?bv:(s==='price-asc'?1e12:-1);
+      return s==='price-asc'?A-B:B-A;
+    }
+    if(s==='prod')return a.prod.localeCompare(b.prod,'pt');
+    if(s==='fab')return (a.fab+a.prod).localeCompare(b.fab+b.prod,'pt');
+    return ((a.ia||'')+a.prod).localeCompare((b.ia||'')+b.prod,'pt');
+  });
+  return r;
+}
+function render(){
+  updatePagBar();
+  const r=filtered();
+  document.getElementById('countLine').innerHTML='Exibindo <b>'+r.length+'</b> de '+PRODUTOS.length+' produtos';
+  const c=document.getElementById('content');
+  if(!r.length){c.innerHTML='<div class="empty"><p>Nenhum produto encontrado.</p></div>';return;}
+  if(state.view==='grid'){
+    c.innerHTML='<div class="grid">'+r.map(p=>{
+      const pv=precoVenda(p);
+      const price=pv?('<span class="pc-price"><span class="cur">R$</span>'+brl(pv)+'</span>'):'';
+      return '<div class="pcard"><div class="pc-top"><span class="pc-fab">'+esc(p.fab||'—')+'</span><span class="pc-cat">'+p.cat+'</span></div><div class="pc-name">'+esc(p.prod||'—')+'</div>'+(p.ia?'<div class="pc-ia">'+esc(p.ia)+'</div>':'')+'<div class="pc-price-row">'+price+'</div></div>';
+    }).join('')+'</div>';
+  }else{
+    c.innerHTML='<div class="tbl-wrap"><table><thead><tr><th data-s="fab">Fabricante</th><th data-s="prod">Produto</th><th data-s="ia">Princípio Ativo</th><th data-s="price-asc" style="text-align:right">Preço</th></tr></thead><tbody>'+
+      r.map(p=>{const pv=precoVenda(p);return '<tr><td class="t-fab">'+esc(p.fab||'—')+'</td><td class="t-name">'+esc(p.prod||'—')+'</td><td class="t-ia">'+esc(p.ia||'—')+'</td><td class="t-price">'+(pv?('<span class="cur">R$</span> '+brl(pv)):'')+'</td></tr>';}).join('')+'</tbody></table></div>';
+    c.querySelectorAll('th[data-s]').forEach(th=>th.onclick=()=>{const s=th.dataset.s;if(s==='price-asc'){state.sort=state.sort==='price-asc'?'price-desc':'price-asc';}else state.sort=s;document.getElementById('sortSel').value=state.sort;render();});
+  }
+}
+
+/* ===== MARGENS ===== */
+function renderMargemFab(){
+  const body=document.getElementById('mgFabBody');
+  const cont={}; PRODUTOS.forEach(p=>{cont[p.fab]=(cont[p.fab]||0)+1;});
+  body.innerHTML=FABRICANTES.map(f=>'<tr><td class="t-fab">'+esc(f)+'</td><td class="hint">'+(cont[f]||0)+'</td><td style="text-align:right"><span class="pct"><input class="mgfab" data-fab="'+esc(f)+'" type="text" inputmode="decimal" value="'+fmtPct(margemFab[f])+'"><span>%</span></span></td></tr>').join('');
+  body.querySelectorAll('.mgfab').forEach(inp=>{
+    inp.onchange=()=>{const m=parsePct(inp.value);if(m===null){alert('Margem inválida (0 a 99).');inp.value=fmtPct(margemFab[inp.dataset.fab]);return;}margemFab[inp.dataset.fab]=m;inp.value=fmtPct(m);render();renderMargemProd();};
+    inp.onkeydown=e=>{if(e.key==='Enter')inp.blur();};
+  });
+}
+function mgFiltered(){
+  return PRODUTOS.filter(p=>{
+    if(mgState.fab!=='ALL'&&p.fab!==mgState.fab)return false;
+    if(mgState.q){const q=norm(mgState.q);if(!(norm(p.prod).includes(q)||norm(p.fab).includes(q)||norm(p.ia).includes(q)))return false;}
+    return true;
+  });
+}
+function renderMargemProd(){
+  const r=mgFiltered();
+  const body=document.getElementById('mgProdBody');
+  if(!r.length){body.innerHTML='<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--muted)">Nenhum produto.</td></tr>';return;}
+  body.innerHTML=r.map(p=>{
+    const custom=margemProd[p._i]!==undefined;
+    const m=margemDe(p); const pv=precoVenda(p);
+    const vencOk=!!parseVenc(p.venc);
+    return '<tr><td class="t-fab">'+esc(p.fab||'—')+'</td>'+
+      '<td class="t-name">'+esc(p.prod||'—')+(custom?'<span class="badge-custom">ESPECÍFICA</span> <button class="reset-mg" data-i="'+p._i+'">usar do fabricante</button>':'')+'</td>'+
+      '<td style="text-align:center"><input class="venc-input'+(vencOk?'':' bad')+'" data-i="'+p._i+'" type="text" value="'+esc(p.venc||'')+'" placeholder="MM/AAAA"></td>'+
+      '<td style="text-align:right"><span class="pct"><input class="mgprod" data-i="'+p._i+'" type="text" inputmode="decimal" value="'+fmtPct(m)+'"><span>%</span></span></td>'+
+      '<td class="calc">'+(pv?('R$ '+brl(pv)):'—')+'</td></tr>';
+  }).join('');
+  body.querySelectorAll('.mgprod').forEach(inp=>{
+    inp.onchange=()=>{const m=parsePct(inp.value);const i=+inp.dataset.i;if(m===null){alert('Margem inválida (0 a 99).');renderMargemProd();return;}margemProd[i]=m;render();renderMargemProd();};
+    inp.onkeydown=e=>{if(e.key==='Enter')inp.blur();};
+  });
+  body.querySelectorAll('.venc-input').forEach(inp=>{
+    inp.onchange=()=>{
+      const i=+inp.dataset.i; const v=inp.value.trim();
+      if(v!=='' && !parseVenc(v)){ alert('Vencimento inválido. Use MM/AAAA, ex: 04/2027.'); renderMargemProd(); return; }
+      PRODUTOS[i].venc=v;
+      render(); renderMargemProd();
+    };
+    inp.onkeydown=e=>{if(e.key==='Enter')inp.blur();};
+  });
+  body.querySelectorAll('.reset-mg').forEach(b=>b.onclick=()=>{delete margemProd[+b.dataset.i];render();renderMargemProd();});
+}
+
+document.getElementById('aplicarGlobal').onclick=()=>{
+  const t=parsePct(document.getElementById('taxaIn').value);
+  const m=parsePct(document.getElementById('mgGlobal').value);
+  if(t===null){alert('Taxa inválida (0 a 99).');return;}
+  if(m===null){alert('Margem inválida (0 a 99).');return;}
+  TAXA=t;
+  FABRICANTES.forEach(f=>margemFab[f]=m);
+  margemProd={};
+  renderMargemFab();renderMargemProd();render();
+  alert('Aplicado: taxa '+fmtPct(t)+'% ao mês e margem '+fmtPct(m)+'% para todos.');
+};
+document.getElementById('taxaIn').onchange=()=>{
+  const t=parsePct(document.getElementById('taxaIn').value);
+  if(t===null){alert('Taxa inválida (0 a 99).');document.getElementById('taxaIn').value=fmtPct(TAXA);return;}
+  TAXA=t; render(); renderMargemProd();
+};
+document.getElementById('mgQ').oninput=e=>{mgState.q=e.target.value;renderMargemProd();};
+document.getElementById('mgFabFilter').innerHTML='<option value="ALL">Todos fabricantes</option>'+FABRICANTES.map(f=>'<option value="'+esc(f)+'">'+esc(f)+'</option>').join('');
+document.getElementById('mgFabFilter').onchange=e=>{mgState.fab=e.target.value;renderMargemProd();};
+
+/* ===== COTAÇÃO ===== */
+let cotItens=[];            // {i, qtd, precoCot (null=usar sugerido)}
+let cotPagAno=HOJE.getFullYear(), cotPagMes=HOJE.getMonth()+1;
+
+function precoSugeridoCot(p){
+  // mesmo cálculo, mas usando a condição de pagamento da cotação
+  const c=p.custo; const v=parseVenc(p.venc);
+  if(!c||c<=0||!v) return null;
+  const m=margemDe(p);
+  if(m>=1||m<0) return null;
+  const n=mesesEntre(cotPagAno,cotPagMes,v.ano,v.mes);
+  return (c/Math.pow(1+TAXA,n))/(1-m);
+}
+function buildCotPagSel(){
+  const sel=document.getElementById('cotPagSel');
+  const LIM_ANO=2027, LIM_MES=4;
+  const maxK=mesesEntre(HOJE.getFullYear(),HOJE.getMonth()+1,LIM_ANO,LIM_MES);
+  let html='';
+  for(let k=0;k<=Math.max(0,maxK);k++){
+    const d=new Date(HOJE.getFullYear(),HOJE.getMonth()+k,1);
+    const a=d.getFullYear(), m=d.getMonth()+1;
+    const label = k===0 ? 'À vista' : ('Pagto '+MESES[m-1]+'/'+a);
+    html+='<option value="'+a+'-'+m+'"'+(k===0?' selected':'')+'>'+label+'</option>';
+  }
+  sel.innerHTML=html;
+  sel.onchange=e=>{
+    const [a,m]=e.target.value.split('-').map(Number);
+    cotPagAno=a; cotPagMes=m;
+    renderCot();  // recalcula sugeridos
+  };
+  // data de hoje
+  const d=HOJE;
+  const dd=String(d.getDate()).padStart(2,'0'), mm=String(d.getMonth()+1).padStart(2,'0');
+  document.getElementById('cotData').value=dd+'/'+mm+'/'+d.getFullYear();
+}
+function renderSugestoes(termo){
+  const box=document.getElementById('cotSug');
+  const q=norm(termo||'');
+  if(!q){ box.classList.remove('on'); box.innerHTML=''; return; }
+  const r=PRODUTOS.filter(p=>norm(p.prod).includes(q)||norm(p.ia).includes(q)||norm(p.fab).includes(q)).slice(0,30);
+  if(!r.length){ box.classList.add('on'); box.innerHTML='<div class="sug-vazio">Nenhum produto encontrado.</div>'; return; }
+  box.classList.add('on');
+  box.innerHTML=r.map(p=>{
+    const pv=precoSugeridoCot(p);
+    return '<div class="sug-item" data-i="'+p._i+'"><div><div class="sug-fab">'+esc(p.fab||'')+'</div><div class="sug-nome">'+esc(p.prod||'')+'</div></div><div class="sug-preco">'+(pv?('R$ '+brl(pv)):'—')+'</div></div>';
+  }).join('');
+  box.querySelectorAll('.sug-item').forEach(it=>it.onclick=()=>{
+    addItem(+it.dataset.i);
+    document.getElementById('cotBusca').value='';
+    box.classList.remove('on'); box.innerHTML='';
+  });
+}
+function addItem(i){
+  if(cotItens.some(x=>x.i===i)){ alert('Este produto já está na cotação.'); return; }
+  cotItens.push({i:i, qtd:1, precoCot:null});
+  renderCot();
+}
+function renderCot(){
+  const body=document.getElementById('cotBody');
+  if(!cotItens.length){
+    body.innerHTML='<tr><td colspan="6" class="cot-vazio">Nenhum item. Use a busca acima para adicionar produtos.</td></tr>';
+    document.getElementById('cotTotal').innerHTML='<span class="lbl">Total</span><span class="val">R$ 0,00</span>';
+    return;
+  }
+  let total=0, totalSug=0;
+  body.innerHTML=cotItens.map((it,idx)=>{
+    const p=PRODUTOS[it.i];
+    const sug=precoSugeridoCot(p);
+    const preco=(it.precoCot!==null&&it.precoCot!==undefined)?it.precoCot:sug;
+    const sub=(preco&&it.qtd)?preco*it.qtd:0;
+    total+=sub;
+    if(sug&&it.qtd) totalSug+=sug*it.qtd;
+    return '<tr>'+
+      '<td><div class="cot-fabinfo">'+esc(p.fab||'')+'</div><div class="cot-nome">'+esc(p.prod||'')+'</div></td>'+
+      '<td style="text-align:center"><input class="qtd-input" data-idx="'+idx+'" type="text" inputmode="decimal" value="'+String(it.qtd).replace('.',',')+'"></td>'+
+      '<td class="sug-val">'+(sug?('R$ '+brl(sug)):'—')+'</td>'+
+      '<td style="text-align:right"><input class="cot-preco-input" data-idx="'+idx+'" type="text" inputmode="decimal" value="'+(preco?brl(preco):'')+'" placeholder="—"></td>'+
+      '<td class="cot-sub">'+(sub?('R$ '+brl(sub)):'—')+'</td>'+
+      '<td style="text-align:center"><button class="cot-del" data-idx="'+idx+'" title="Remover">✕</button></td>'+
+    '</tr>';
+  }).join('');
+
+  // total + comparação com sugerido
+  const dif=totalSug-total;
+  let descTxt='';
+  if(totalSug>0 && Math.abs(dif)>0.005){
+    const pctv=(dif/totalSug*100);
+    descTxt='<span class="desc">'+(dif>0?('desconto de R$ '+brl(dif)+' ('+pctv.toLocaleString('pt-BR',{maximumFractionDigits:1})+'%)'):('acréscimo de R$ '+brl(-dif)))+'</span>';
+  }
+  document.getElementById('cotTotal').innerHTML=descTxt+'<span class="lbl">Total</span><span class="val">R$ '+brl(total)+'</span>';
+
+  body.querySelectorAll('.qtd-input').forEach(inp=>{
+    inp.onchange=()=>{
+      const idx=+inp.dataset.idx;
+      const v=parseFloat(inp.value.replace(/\./g,'').replace(',','.'));
+      cotItens[idx].qtd=(!isNaN(v)&&v>0)?v:1;
+      renderCot();
+    };
+    inp.onkeydown=e=>{ if(e.key==='Enter') inp.blur(); };
+  });
+  body.querySelectorAll('.cot-preco-input').forEach(inp=>{
+    inp.onchange=()=>{
+      const idx=+inp.dataset.idx;
+      const s=inp.value.trim();
+      if(s===''){ cotItens[idx].precoCot=null; renderCot(); return; }
+      let v=s.replace(/[^0-9.,]/g,'');
+      if(v.indexOf(',')>-1) v=v.replace(/\./g,'').replace(',','.');
+      const n=parseFloat(v);
+      cotItens[idx].precoCot=(!isNaN(n)&&n>0)?n:null;
+      renderCot();
+    };
+    inp.onkeydown=e=>{ if(e.key==='Enter') inp.blur(); };
+  });
+  body.querySelectorAll('.cot-del').forEach(b=>b.onclick=()=>{
+    cotItens.splice(+b.dataset.idx,1);
+    renderCot();
+  });
+}
+document.getElementById('cotBusca').oninput=e=>renderSugestoes(e.target.value);
+document.getElementById('cotLimpar').onclick=()=>{
+  if(!cotItens.length && !document.getElementById('cotCliente').value){ return; }
+  if(confirm('Limpar toda a cotação?')){
+    cotItens=[]; editandoId=null;
+    document.getElementById('cotCliente').value='';
+    document.getElementById('cotFazenda').value='';
+    document.getElementById('cotCpf').value='';
+    document.getElementById('cotMun').value='';
+    renderCot();
+  }
+};
+
+/* ========== CONSULTOR / LOGIN (protótipo simples) ========== */
+const CONSULTORES = [
+  {user:'joao', nome:'João Silva', senha:'123'},
+  {user:'maria', nome:'Maria Souza', senha:'123'},
+  {user:'consultor', nome:'Consultor Teste', senha:'123'}
+];
+let consultorAtual=null;         // {user,nome}
+let cotSalvas=[];                // cotações salvas (protótipo: em memória)
+let proxNumero=100000;           // numeração de pedido a partir de 100.000
+let editandoId=null;             // id da cotação sendo editada (null=nova)
+let seqCot=1;
+
+function abrirLogin(){
+  const sel=document.getElementById('loginUser');
+  sel.innerHTML=CONSULTORES.map(c=>'<option value="'+c.user+'">'+esc(c.nome)+'</option>').join('');
+  document.getElementById('loginPass').value='';
+  document.getElementById('loginErr').classList.remove('on');
+  document.getElementById('loginBg').classList.add('on');
+}
+function fazerLogin(){
+  const u=document.getElementById('loginUser').value;
+  const c=CONSULTORES.find(x=>x.user===u);
+  if(!c){ document.getElementById('loginErr').classList.add('on'); return; }
+  consultorAtual={user:c.user,nome:c.nome};
+  document.getElementById('loginBg').classList.remove('on');
+  atualizarConsultorUI();
+}
+function atualizarConsultorUI(){
+  const sel=document.getElementById('consultorSel');
+  if(consultorAtual){
+    sel.innerHTML='<option>'+esc(consultorAtual.nome)+'</option><option value="__sair__">Sair</option>';
+  }else{
+    sel.innerHTML='<option value="__login__">Entrar</option>';
+  }
+}
+document.getElementById('loginBtn').onclick=fazerLogin;
+document.getElementById('loginPass').onkeydown=e=>{ if(e.key==='Enter') fazerLogin(); };
+document.getElementById('consultorSel').onchange=e=>{
+  if(e.target.value==='__sair__'){ consultorAtual=null; atualizarConsultorUI(); showTab('list'); }
+  else if(e.target.value==='__login__'){ abrirLogin(); }
+};
+document.getElementById('loginBg').onclick=e=>{ if(e.target.id==='loginBg') document.getElementById('loginBg').classList.remove('on'); };
+
+/* exige login para certas abas */
+function precisaLogin(){
+  if(consultorAtual) return true;
+  abrirLogin();
+  return false;
+}
+
+function limparNovaCotacao(){
+  cotItens=[];
+  editandoId=null;
+  cotPagAno=HOJE.getFullYear(); cotPagMes=HOJE.getMonth()+1;
+  const ids=['cotCliente','cotFazenda','cotCpf','cotMun'];
+  ids.forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  const ps=document.getElementById('cotPagSel'); if(ps) ps.value=cotPagAno+'-'+cotPagMes;
+  const bs=document.getElementById('cotBusca'); if(bs) bs.value='';
+  const sg=document.getElementById('cotSug'); if(sg){ sg.classList.remove('on'); sg.innerHTML=''; }
+  renderCot();
+}
+
+/* salvar cotação */
+document.getElementById('cotSalvar').onclick=()=>{
+  if(!consultorAtual){ abrirLogin(); return; }
+  const cliente=document.getElementById('cotCliente').value.trim();
+  if(!cliente){ alert('Informe o nome do cliente.'); return; }
+  if(!cotItens.length){ alert('Adicione pelo menos um produto.'); return; }
+  const dados={
+    consultor:consultorAtual.user,
+    consultorNome:consultorAtual.nome,
+    cliente:cliente,
+    fazenda:document.getElementById('cotFazenda').value.trim(),
+    cpf:document.getElementById('cotCpf').value.trim(),
+    mun:document.getElementById('cotMun').value.trim(),
+    pagAno:cotPagAno, pagMes:cotPagMes,
+    itens:cotItens.map(it=>{
+      const p=PRODUTOS[it.i];
+      const sug=precoSugeridoCot(p);
+      const preco=(it.precoCot!=null)?it.precoCot:sug;
+      return {fab:p.fab,prod:p.prod,ia:p.ia,unid:'LT',cultura:it.cultura||'',qtd:it.qtd,sug:sug,preco:preco};
+    })
+  };
+  if(editandoId){
+    const c=cotSalvas.find(x=>x.id===editandoId);
+    if(c){ Object.assign(c,dados); c.atualizada=new Date(); }
+    renderMinhas();
+    limparNovaCotacao();
+    alert('Cotação atualizada! Os campos foram limpos para uma nova.');
+  }else{
+    dados.id=seqCot++;
+    dados.status='cotacao';
+    dados.numero=null;
+    dados.criada=new Date();
+    cotSalvas.push(dados);
+    renderMinhas();
+    limparNovaCotacao();
+    alert('Cotação salva! Veja em "Minhas Cotações". Os campos foram limpos para uma nova.');
+  }
+};
+
+/* ===== MINHAS COTAÇÕES ===== */
+function totalCot(c){
+  return c.itens.reduce((s,it)=>s+((it.preco&&it.qtd)?it.preco*it.qtd:0),0);
+}
+function renderMinhas(){
+  const list=document.getElementById('mcList');
+  const sub=document.getElementById('minhasSub');
+  if(!consultorAtual){ list.innerHTML='<div class="mc-vazio">Faça login para ver suas cotações.</div>'; return; }
+  sub.textContent='Cotações de '+consultorAtual.nome+'.';
+  const minhas=cotSalvas.filter(c=>c.consultor===consultorAtual.user);
+  if(!minhas.length){ list.innerHTML='<div class="mc-vazio">Você ainda não tem cotações salvas. Crie uma na aba "Nova Cotação".</div>'; return; }
+  list.innerHTML=minhas.slice().reverse().map(c=>{
+    const t=totalCot(c);
+    const dt=(c.criada instanceof Date)?c.criada.toLocaleDateString('pt-BR'):'';
+    const stat=c.status==='pedido'?'<span class="mc-status pedido">Pedido '+(c.numero||'')+'</span>':'<span class="mc-status cotacao">Cotação</span>';
+    return '<div class="mc-card"><div class="mc-info"><div class="mc-cliente">'+esc(c.cliente)+'</div>'+
+      '<div class="mc-meta">'+(c.fazenda?('Fazenda: '+esc(c.fazenda)+' · '):'')+c.itens.length+' item(ns) · '+dt+'</div>'+stat+'</div>'+
+      '<div class="mc-total">R$ '+brl(t)+'</div>'+
+      '<div class="mc-btns">'+
+        '<button class="mc-btn" data-ed="'+c.id+'">Abrir/Editar</button>'+
+        (c.status!=='pedido'?'<button class="mc-btn primary" data-ped="'+c.id+'">Gerar pedido</button>':'<button class="mc-btn primary" data-pdf="'+c.id+'">Ver pedido</button>')+
+        '<button class="mc-btn danger" data-del="'+c.id+'">Excluir</button>'+
+      '</div></div>';
+  }).join('');
+  list.querySelectorAll('[data-ed]').forEach(b=>b.onclick=()=>abrirCotacao(+b.dataset.ed));
+  list.querySelectorAll('[data-ped]').forEach(b=>b.onclick=()=>gerarPedido(+b.dataset.ped));
+  list.querySelectorAll('[data-pdf]').forEach(b=>b.onclick=()=>imprimirPedido(+b.dataset.pdf));
+  list.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{
+    const id=+b.dataset.del;
+    if(b.dataset.confirm==='1'){
+      cotSalvas=cotSalvas.filter(x=>x.id!==id);
+      renderMinhas();
+    }else{
+      b.dataset.confirm='1';
+      b.textContent='Confirmar exclusão?';
+      b.classList.add('confirming');
+      setTimeout(()=>{ if(b){ b.dataset.confirm='0'; b.textContent='Excluir'; b.classList.remove('confirming'); } },3500);
+    }
+  });
+}
+function abrirCotacao(id){
+  const c=cotSalvas.find(x=>x.id===id); if(!c) return;
+  editandoId=id;
+  document.getElementById('cotCliente').value=c.cliente||'';
+  document.getElementById('cotFazenda').value=c.fazenda||'';
+  document.getElementById('cotCpf').value=c.cpf||'';
+  document.getElementById('cotMun').value=c.mun||'';
+  cotPagAno=c.pagAno; cotPagMes=c.pagMes;
+  document.getElementById('cotPagSel').value=c.pagAno+'-'+c.pagMes;
+  // reconstruir itens: localizar índice do produto pelo fab+prod
+  cotItens=c.itens.map(it=>{
+    const idx=PRODUTOS.findIndex(p=>p.fab===it.fab&&p.prod===it.prod);
+    return {i:idx>=0?idx:0, qtd:it.qtd, precoCot:it.preco, cultura:it.cultura};
+  }).filter(x=>x.i>=0);
+  showTab('cotacao');
+  renderCot();
+}
+function gerarPedido(id){
+  const c=cotSalvas.find(x=>x.id===id); if(!c) return;
+  if(c.status!=='pedido'){
+    c.status='pedido';
+    c.numero=String(proxNumero++);
+    renderMinhas();
+  }
+  imprimirPedido(id);
+}
+
+function imprimirPedido(id){
+  const c=cotSalvas.find(x=>x.id===id); if(!c) return;
+  const total=totalCot(c);
+  const MES=['','janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+  const venc = 'Pagto '+String(c.pagMes).padStart(2,'0')+'/'+c.pagAno;
+  const dt=(c.criada instanceof Date)?c.criada:new Date();
+  const dataStr=String(dt.getDate()).padStart(2,'0')+'/'+String(dt.getMonth()+1).padStart(2,'0')+'/'+dt.getFullYear();
+  const linhas=c.itens.map(it=>{
+    const sub=(it.preco&&it.qtd)?it.preco*it.qtd:0;
+    return '<tr><td class="c">'+(it.qtd||'')+'</td><td class="c">'+esc(it.unid||'LT')+'</td><td>'+esc(it.prod||'')+'</td><td>'+esc(it.cultura||'')+'</td><td class="r">'+(it.preco?brl(it.preco):'')+'</td><td class="r">'+(sub?brl(sub):'')+'</td></tr>';
+  }).join('');
+  // linhas vazias para preencher a página como no modelo
+  let vazias=''; const min=12; for(let k=c.itens.length;k<min;k++){ vazias+='<tr><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td></tr>'; }
+  const numero = c.numero || '—';
+  const pedidoHtml=
+    '<div class="ped-doc" id="pedDoc">'+
+    '<div class="top">'+
+      '<div class="brand"><div class="nome">SETEC<span style="color:#2f6b4f">:</span></div><div class="subb">SEMEANDO TECNOLOGIA <b>agro</b><br>UBERLÂNDIA - MG</div></div>'+
+      '<div class="emp"><div class="t">JSM COMÉRCIO E REPRESENTAÇÃO DE PRODUTOS AGROPECUÁRIOS LTDA.</div><div class="l">AV. SEGISMUNDO PEREIRA, 3099 - B. SANTA MÔNICA<br>UBERLÂNDIA - MINAS GERAIS - CEP 38408-170<br>FONE: (34) 3231-0401<br>CNPJ: 09.241.196/0001-80 · INSC. EST.: 001.054.730.0069</div></div>'+
+      '<div class="ped"><div class="lbl">PEDIDO</div><div class="num">'+esc(numero)+'</div><div class="data">Data: '+dataStr+'</div></div>'+
+    '</div>'+
+    '<div class="cad"><div class="h">DADOS CADASTRAIS</div>'+
+      '<div class="row"><div class="cell" style="flex:2"><b>Nome</b>'+esc(c.cliente||'')+'</div><div class="cell" style="flex:1"><b>CPF / CNPJ</b>'+esc(c.cpf||'')+'</div><div class="cell" style="flex:1"><b>Consultor de Vendas</b>'+esc(c.consultorNome||'')+'</div></div>'+
+      '<div class="row"><div class="cell" style="flex:2"><b>Fazenda</b>'+esc(c.fazenda||'')+'</div><div class="cell" style="flex:1"><b>Município / UF</b>'+esc(c.mun||'')+'</div><div class="cell" style="flex:1"><b>Vencimento</b>'+esc(venc)+'</div></div>'+
+    '</div>'+
+    '<table class="itens"><thead><tr><th>Quantidade</th><th>Unid.</th><th>Produto</th><th>Cultura</th><th>Preço Unitário</th><th>Valor Total</th></tr></thead><tbody>'+linhas+vazias+'</tbody></table>'+
+    '<div class="tot"><span>TOTAL R$</span><span>'+brl(total)+'</span></div>'+
+    '<div class="obs">AS MERCADORIAS CONSTANTES DESTE PEDIDO SE DESTINAM EXCLUSIVAMENTE ÀS ATIVIDADES AGRÍCOLAS OU PECUÁRIAS. Os preços se estendem por mercadorias postas em nossa loja, ficando a cargo do comprador as despesas de despacho, frete e carreto. Pedido válido somente após aprovação do Departamento de Crédito. UMA VEZ FATURADO, A VENDEDORA NÃO ACEITA DEVOLUÇÃO DE MERCADORIA.'+
+      '<div class="assin">Assinatura do(a) Comprador(a) / Por extenso</div></div>'+
+    '</div>';
+  const bg=document.getElementById('pedBg');
+  document.getElementById('pedContent').innerHTML=pedidoHtml;
+  bg.classList.add('on');
+}
+document.getElementById('pedFechar') && (document.getElementById('pedFechar').onclick=()=>document.getElementById('pedBg').classList.remove('on'));
+document.getElementById('pedImprimir') && (document.getElementById('pedImprimir').onclick=()=>{ document.body.classList.add('printing-ped'); window.print(); setTimeout(()=>document.body.classList.remove('printing-ped'),500); });
+document.getElementById('pedCompartilhar') && (document.getElementById('pedCompartilhar').onclick=async ()=>{
+  const doc=document.getElementById('pedContent').querySelector('.ped-doc');
+  if(!doc){ return; }
+  const btn=document.getElementById('pedCompartilhar');
+  const txtOrig=btn.textContent;
+  btn.textContent='Gerando imagem...';
+  btn.disabled=true;
+  try{
+    if(typeof html2canvas==='undefined'){ alert('Recurso de compartilhar precisa de internet na primeira vez. Conecte-se e tente novamente.'); return; }
+    const canvas=await html2canvas(doc,{scale:2,backgroundColor:'#ffffff'});
+    const blob=await new Promise(res=>canvas.toBlob(res,'image/png'));
+    const arquivo=new File([blob],'pedido.png',{type:'image/png'});
+    // Web Share com arquivo (celular)
+    if(navigator.canShare && navigator.canShare({files:[arquivo]})){
+      await navigator.share({files:[arquivo], title:'Pedido Setec', text:'Segue o pedido.'});
+    }else{
+      // fallback: baixar a imagem
+      const a=document.createElement('a');
+      a.href=canvas.toDataURL('image/png');
+      a.download='pedido.png';
+      a.click();
+      alert('Imagem do pedido baixada. Você pode anexá-la no WhatsApp ou e-mail.');
+    }
+  }catch(e){
+    if(e && e.name==='AbortError'){ /* usuário cancelou o compartilhamento */ }
+    else { alert('Não foi possível compartilhar: '+(e&&e.message?e.message:e)); }
+  }finally{
+    btn.textContent=txtOrig;
+    btn.disabled=false;
+  }
+});
+
+document.getElementById('tabMinhas').onclick=()=>{ if(precisaLogin()){ showTab('minhas'); } };
+document.getElementById('cotImprimir') && (document.getElementById('cotImprimir').onclick=()=>window.print());
+
+function showTab(t){
+  ['list','cotacao','minhas','margem'].forEach(x=>{
+    const v=document.getElementById(x==='list'?'listView':x+'View');
+    if(v){ if(x==='list') v.style.display=(t==='list')?'block':'none'; else v.classList.toggle('on',t===x); }
+  });
+  document.getElementById('tabList').classList.toggle('on',t==='list');
+  document.getElementById('tabCotacao').classList.toggle('on',t==='cotacao');
+  document.getElementById('tabMinhas').classList.toggle('on',t==='minhas');
+  document.getElementById('tabMargem').classList.toggle('on',t==='margem');
+  if(t==='margem'){renderMargemFab();renderMargemProd();}
+  if(t==='cotacao'){renderCot();}
+  if(t==='minhas'){renderMinhas();}
+}
+document.getElementById('tabList').onclick=()=>showTab('list');
+document.getElementById('tabCotacao').onclick=()=>showTab('cotacao');
+document.getElementById('tabMargem').onclick=()=>showTab('margem');
+document.getElementById('q').oninput=e=>{state.q=e.target.value;render();};
+document.getElementById('fabSel').onchange=e=>{state.fab=e.target.value;render();};
+document.getElementById('sortSel').onchange=e=>{state.sort=e.target.value;render();};
+document.getElementById('vGrid').onclick=()=>{state.view='grid';document.getElementById('vGrid').classList.add('on');document.getElementById('vTable').classList.remove('on');render();};
+document.getElementById('vTable').onclick=()=>{state.view='table';document.getElementById('vTable').classList.add('on');document.getElementById('vGrid').classList.remove('on');render();};
+document.querySelectorAll('.chip').forEach(ch=>ch.onclick=()=>{state.cat=ch.dataset.cat;document.querySelectorAll('.chip').forEach(x=>x.classList.toggle('on',x.dataset.cat===state.cat));render();});
+
+function init(){ try{ buildPagSel(); buildCotPagSel(); atualizarConsultorUI(); renderCot(); render(); }catch(e){ if(window.console)console.warn(e); } }
+if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',init);}else{init();}
+</script>
+</body>
+</html>
