@@ -141,6 +141,14 @@ table.cot tbody tr:last-child td{border-bottom:0}
 .mc-ico{width:30px;height:30px;border-radius:8px;padding:5px}
 .mc-ico.cot{color:#8a6d1f;background:var(--gold-soft)}
 .mc-ico.ped{color:var(--leaf-dark);background:var(--leaf-soft)}
+.mc-ico.perd{color:#b23c1c;background:#fbe6e0}
+.mc-card.is-pedido{border-left:4px solid var(--leaf)}
+.mc-card.is-cotacao{border-left:4px solid var(--gold)}
+.mc-card.is-perdida{border-left:4px solid #c0392b;opacity:.85}
+.mc-status.perdida{background:#fbe6e0;color:#b23c1c}
+.mc-motivo{font-size:12px;color:#b23c1c;font-style:italic;margin-top:4px}
+.mc-btn.perda{background:#fff;color:#b23c1c;border:1.5px solid #e5b3a5}
+.mc-btn.perda:hover{background:#fbe6e0}
 .mc-card.is-pedido{border-left:4px solid var(--leaf)}
 .mc-card.is-cotacao{border-left:4px solid var(--gold)}
 .mc-consultor{font-size:12px;color:var(--muted);font-weight:600;margin-top:2px}
@@ -415,6 +423,15 @@ table.cot tbody tr:last-child td{border-bottom:0}
       <input id="cadAdminPass" type="password" placeholder="Senha de admin">
       <label for="cadNome">Nome do consultor</label>
       <input id="cadNome" type="text" placeholder="Nome completo">
+      <label for="cadPapel">Função</label>
+      <select id="cadPapel">
+        <option value="consultor">Consultor</option>
+        <option value="gerente">Gerente</option>
+      </select>
+      <div id="cadGerenteWrap">
+        <label for="cadGerente">Carteira (gerente responsável)</label>
+        <select id="cadGerente"><option value="">Selecione o gerente...</option></select>
+      </div>
       <label for="cadEmail">E-mail do consultor</label>
       <input id="cadEmail" type="email" placeholder="email@setecagro.com">
       <label for="cadSenha">Senha inicial</label>
@@ -456,6 +473,10 @@ try{ if(window.supabase&&window.supabase.createClient){ sb=window.supabase.creat
 
 let usuario=null;      // {id, email, nome}
 let ehAdmin=false;
+let meuPapel='consultor';   // 'admin' | 'gerente' | 'consultor'
+let meuGerenteId=null;      // se consultor, id do gerente
+let listaGerentes=[];       // [{id, nome}] para o seletor de cadastro
+let adminCreds=null;        // guarda {email, senha} do admin para re-logar após criar usuário
 
 function ehEmailAdmin(email){ return (email||'').trim().toLowerCase()===EMAIL_ADMIN; }
 
@@ -835,6 +856,8 @@ async function fazerLogin(){
   try{
     const {data,error}=await sb.auth.signInWithPassword({email:email,password:senha});
     if(error){ err.textContent='E-mail ou senha incorretos.'; err.classList.add('on'); return; }
+    // guardar credenciais do admin para re-logar após criar usuários
+    if(ehEmailAdmin(email)){ adminCreds={email:email, senha:senha}; }
     await aoLogar(data.user);
     fecharLogin();
   }catch(e){ err.textContent='Erro ao entrar: '+(e.message||e); err.classList.add('on'); }
@@ -845,10 +868,23 @@ async function aoLogar(user){
   const nome=(user.user_metadata&&user.user_metadata.nome)?user.user_metadata.nome:(user.email||'').split('@')[0];
   usuario={id:user.id, email:user.email, nome:nome};
   ehAdmin=ehEmailAdmin(user.email);
-  consultorAtual={user:user.id, nome:nome}; // compat com código existente
+  // carregar papel e gerente do perfil
+  meuPapel = ehAdmin ? 'admin' : 'consultor';
+  meuGerenteId=null;
+  if(sbOk){
+    try{
+      const {data:perf}=await sb.from('perfis').select('papel,gerente_id,nome').eq('id',user.id).maybeSingle();
+      if(perf){
+        if(!ehAdmin) meuPapel=perf.papel||'consultor';
+        meuGerenteId=perf.gerente_id||null;
+        if(perf.nome) usuario.nome=perf.nome;
+      }
+    }catch(e){ console.warn('perfil load',e); }
+  }
+  consultorAtual={user:user.id, nome:usuario.nome}; // compat
   atualizarConsultorUI();
-  // admin pode editar margens/custos
   document.body.classList.toggle('is-admin', ehAdmin);
+  document.body.classList.toggle('is-gerente', meuPapel==='gerente');
   await carregarCotacoes();
   renderMinhas && renderMinhas();
 }
@@ -878,32 +914,71 @@ async function fazerCadastro(){
   const nome=document.getElementById('cadNome').value.trim();
   const email=document.getElementById('cadEmail').value.trim();
   const senha=document.getElementById('cadSenha').value;
+  const papel=document.getElementById('cadPapel').value;
+  const gerenteId=document.getElementById('cadGerente').value;
   const err=document.getElementById('cadErr'); const ok=document.getElementById('cadOk');
   err.classList.remove('on'); ok.style.display='none';
   if(adminPass!==SENHA_CADASTRO){ err.textContent='Senha de administrador incorreta.'; err.classList.add('on'); return; }
   if(!nome||!email||!senha){ err.textContent='Preencha todos os campos.'; err.classList.add('on'); return; }
   if(senha.length<6){ err.textContent='A senha deve ter ao menos 6 caracteres.'; err.classList.add('on'); return; }
+  if(papel==='consultor' && !gerenteId){ err.textContent='Selecione o gerente (carteira) do consultor.'; err.classList.add('on'); return; }
   if(!sbOk){ err.textContent='Sem conexão com o servidor.'; err.classList.add('on'); return; }
   const btn=document.getElementById('cadBtn'); const t=btn.textContent; btn.textContent='Criando...'; btn.disabled=true;
   try{
-    // guardar sessão atual (se admin estiver logado) para não ser trocado pelo signUp
     const {data,error}=await sb.auth.signUp({email:email,password:senha,options:{data:{nome:nome}}});
     if(error){ err.textContent='Erro: '+error.message; err.classList.add('on'); return; }
-    ok.textContent='Acesso criado para '+nome+'! Já pode entrar com esse e-mail e senha.';
+    const novoId = data.user ? data.user.id : null;
+    // gravar o perfil (papel + gerente). O signUp já deixa o novo usuário logado, então a inserção passa pelo RLS (auth.uid()=id).
+    if(novoId){
+      const perfil={ id:novoId, nome:nome, email:email, papel:papel, gerente_id: (papel==='consultor'? gerenteId : null) };
+      const {error:e2}=await sb.from('perfis').upsert([perfil]);
+      if(e2){ console.warn('perfil',e2); }
+    }
+    ok.textContent='Acesso criado para '+nome+' ('+papel+')! Já pode entrar com esse e-mail e senha.';
     ok.style.display='block';
     document.getElementById('cadNome').value=''; document.getElementById('cadEmail').value=''; document.getElementById('cadSenha').value='';
-    // o signUp já loga o novo usuário; deslogar para o admin voltar a entrar quando quiser
+    document.getElementById('cadPapel').value='consultor'; atualizarCadGerenteUI();
+    // o signUp logou o novo usuário; re-logar o admin automaticamente (se tivermos as credenciais guardadas)
     try{ await sb.auth.signOut(); }catch(_){}
-    usuario=null; ehAdmin=false; consultorAtual=null; atualizarConsultorUI();
+    if(adminCreds){
+      try{
+        const {data:re,error:er}=await sb.auth.signInWithPassword({email:adminCreds.email,password:adminCreds.senha});
+        if(!er && re.user){ await aoLogar(re.user); }
+      }catch(_){}
+    }else{
+      usuario=null; ehAdmin=false; consultorAtual=null; atualizarConsultorUI();
+    }
   }catch(e){ err.textContent='Erro ao cadastrar: '+(e.message||e); err.classList.add('on'); }
   finally{ btn.textContent=t; btn.disabled=false; }
 }
 
+// mostra/esconde o seletor de gerente conforme o papel
+function atualizarCadGerenteUI(){
+  const papel=document.getElementById('cadPapel').value;
+  const wrap=document.getElementById('cadGerenteWrap');
+  if(wrap) wrap.style.display = (papel==='consultor') ? 'block' : 'none';
+}
+
+// carrega a lista de gerentes (perfis com papel=gerente) para o seletor de cadastro
+async function carregarGerentes(){
+  if(!sbOk) return;
+  try{
+    const {data,error}=await sb.from('perfis').select('id,nome').eq('papel','gerente').order('nome');
+    if(error) throw error;
+    listaGerentes=data||[];
+    const sel=document.getElementById('cadGerente');
+    if(sel){
+      sel.innerHTML='<option value="">Selecione o gerente...</option>'+listaGerentes.map(g=>'<option value="'+g.id+'">'+esc(g.nome||'')+'</option>').join('');
+    }
+  }catch(e){ console.warn('carregarGerentes',e); }
+}
+
 document.getElementById('loginBtn').onclick=fazerLogin;
 document.getElementById('loginPass').onkeydown=e=>{ if(e.key==='Enter') fazerLogin(); };
-document.getElementById('linkCadastro').onclick=e=>{ e.preventDefault(); document.getElementById('loginView').style.display='none'; document.getElementById('cadastroView').style.display='block'; };
+document.getElementById('linkCadastro').onclick=e=>{ e.preventDefault(); document.getElementById('loginView').style.display='none'; document.getElementById('cadastroView').style.display='block'; carregarGerentes(); atualizarCadGerenteUI(); };
 document.getElementById('linkVoltarLogin').onclick=e=>{ e.preventDefault(); document.getElementById('loginView').style.display='block'; document.getElementById('cadastroView').style.display='none'; };
 document.getElementById('cadBtn').onclick=fazerCadastro;
+document.getElementById('cadPapel').onchange=atualizarCadGerenteUI;
 document.getElementById('consultorSel').onchange=e=>{
   if(e.target.value==='__sair__'){ fazerLogout(); }
   else if(e.target.value==='__login__'){ abrirLogin(); }
@@ -942,6 +1017,7 @@ async function carregarCotacoes(){
       cliente:r.cliente, fazenda:r.fazenda, cpf:r.cpf, mun:r.municipio,
       pagAno:r.pag_ano, pagMes:r.pag_mes, status:r.status||'cotacao',
       numero:r.numero_pedido?String(r.numero_pedido):null,
+      motivoPerda:r.motivo_perda||null,
       itens:r.itens||[], criada:r.criada_em?new Date(r.criada_em):new Date()
     }));
   }catch(e){ console.warn('carregarCotacoes',e); cotSalvas=[]; }
@@ -1003,35 +1079,47 @@ function renderMinhas(){
   const list=document.getElementById('mcList');
   const sub=document.getElementById('minhasSub');
   if(!usuario){ list.innerHTML='<div class="mc-vazio">Faça login para ver suas cotações.</div>'; return; }
-  sub.textContent = ehAdmin ? 'Administrador — todas as cotações e pedidos.' : ('Cotações de '+usuario.nome+'.');
-  // RLS já filtra no banco: consultor vê as dele, admin vê todas
+  const papelTxt = ehAdmin ? 'Administrador — todas as cotações e pedidos.' : (meuPapel==='gerente' ? ('Gerente '+usuario.nome+' — sua carteira.') : ('Cotações de '+usuario.nome+'.'));
+  sub.textContent = papelTxt;
+  // RLS já filtra no banco: consultor vê as dele, gerente vê a carteira, admin vê todas
   const minhas=cotSalvas.slice();
   if(!minhas.length){ list.innerHTML='<div class="mc-vazio">Nenhuma cotação salva ainda. Crie uma na aba "Cotação".</div>'; return; }
-  // ícones (SVG) para cotação e pedido
   const icoCot='<svg class="mc-ico cot" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12h6M9 16h6M9 8h6"/><rect x="4" y="3" width="16" height="18" rx="2"/></svg>';
   const icoPed='<svg class="mc-ico ped" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>';
+  const icoPerd='<svg class="mc-ico perd" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>';
   list.innerHTML=minhas.map(c=>{
     const t=totalCot(c);
     const dt=(c.criada instanceof Date)?c.criada.toLocaleDateString('pt-BR'):'';
     const ehPedido=c.status==='pedido';
-    const ico=ehPedido?icoPed:icoCot;
-    const stat=ehPedido?('<span class="mc-status pedido">Pedido '+(c.numero||'')+'</span>'):'<span class="mc-status cotacao">Cotação</span>';
-    const quemFez = ehAdmin ? ('<div class="mc-consultor">Consultor: '+esc(c.consultorNome||'—')+'</div>') : '';
-    return '<div class="mc-card '+(ehPedido?'is-pedido':'is-cotacao')+'">'+
+    const ehPerdida=c.status==='perdida';
+    const ico=ehPedido?icoPed:(ehPerdida?icoPerd:icoCot);
+    let stat;
+    if(ehPedido) stat='<span class="mc-status pedido">Pedido '+(c.numero||'')+'</span>';
+    else if(ehPerdida) stat='<span class="mc-status perdida">Cotação perdida</span>';
+    else stat='<span class="mc-status cotacao">Cotação</span>';
+    const quemFez = (ehAdmin||meuPapel==='gerente') ? ('<div class="mc-consultor">Consultor: '+esc(c.consultorNome||'—')+'</div>') : '';
+    const motivo = ehPerdida && c.motivoPerda ? ('<div class="mc-motivo">Motivo: '+esc(c.motivoPerda)+'</div>') : '';
+    const classe = ehPedido?'is-pedido':(ehPerdida?'is-perdida':'is-cotacao');
+    // botões: pedido tem "Ver pedido"; cotação (não perdida) tem "Gerar pedido" e "Marcar perdida"
+    let botoes='<button class="mc-btn" data-ed="'+c.id+'">Abrir/Editar</button>';
+    if(ehPedido){ botoes+='<button class="mc-btn primary" data-pdf="'+c.id+'">Ver pedido</button>'; }
+    else if(ehPerdida){ botoes+='<button class="mc-btn" data-reativar="'+c.id+'">Reabrir</button>'; }
+    else { botoes+='<button class="mc-btn primary" data-ped="'+c.id+'">Gerar pedido</button>'+
+                   '<button class="mc-btn perda" data-perda="'+c.id+'">Perdida</button>'; }
+    botoes+='<button class="mc-btn danger" data-del="'+c.id+'">Excluir</button>';
+    return '<div class="mc-card '+classe+'">'+
       '<div class="mc-icowrap">'+ico+'</div>'+
       '<div class="mc-info"><div class="mc-cliente">'+esc(c.cliente)+'</div>'+
       '<div class="mc-meta">'+(c.fazenda?('Fazenda: '+esc(c.fazenda)+' · '):'')+c.itens.length+' item(ns) · '+dt+'</div>'+
-      quemFez+stat+'</div>'+
+      quemFez+stat+motivo+'</div>'+
       '<div class="mc-total">R$ '+brl(t)+'</div>'+
-      '<div class="mc-btns">'+
-        '<button class="mc-btn" data-ed="'+c.id+'">Abrir/Editar</button>'+
-        (!ehPedido?'<button class="mc-btn primary" data-ped="'+c.id+'">Gerar pedido</button>':'<button class="mc-btn primary" data-pdf="'+c.id+'">Ver pedido</button>')+
-        '<button class="mc-btn danger" data-del="'+c.id+'">Excluir</button>'+
-      '</div></div>';
+      '<div class="mc-btns">'+botoes+'</div></div>';
   }).join('');
   list.querySelectorAll('[data-ed]').forEach(b=>b.onclick=()=>abrirCotacao(+b.dataset.ed));
   list.querySelectorAll('[data-ped]').forEach(b=>b.onclick=()=>gerarPedido(+b.dataset.ped));
   list.querySelectorAll('[data-pdf]').forEach(b=>b.onclick=()=>imprimirPedido(+b.dataset.pdf));
+  list.querySelectorAll('[data-perda]').forEach(b=>b.onclick=()=>marcarPerdida(+b.dataset.perda));
+  list.querySelectorAll('[data-reativar]').forEach(b=>b.onclick=()=>reabrirCotacao(+b.dataset.reativar));
   list.querySelectorAll('[data-del]').forEach(b=>b.onclick=async ()=>{
     const id=+b.dataset.del;
     if(b.dataset.confirm==='1'){
@@ -1047,6 +1135,34 @@ function renderMinhas(){
       setTimeout(()=>{ if(b){ b.dataset.confirm='0'; b.textContent='Excluir'; b.classList.remove('confirming'); } },3500);
     }
   });
+}
+
+async function marcarPerdida(id){
+  const c=cotSalvas.find(x=>x.id===id); if(!c) return;
+  const motivo=prompt('Por que a cotação foi perdida? (descreva o motivo)');
+  if(motivo===null) return; // cancelou
+  const m=motivo.trim();
+  if(!m){ alert('Informe o motivo da perda.'); return; }
+  try{
+    if(sbOk){
+      const {error}=await sb.from('cotacoes').update({status:'perdida', motivo_perda:m, atualizada_em:new Date().toISOString()}).eq('id',id);
+      if(error) throw error;
+    }
+    c.status='perdida'; c.motivoPerda=m;
+    renderMinhas();
+  }catch(e){ alert('Erro ao marcar como perdida: '+(e.message||e)); }
+}
+
+async function reabrirCotacao(id){
+  const c=cotSalvas.find(x=>x.id===id); if(!c) return;
+  try{
+    if(sbOk){
+      const {error}=await sb.from('cotacoes').update({status:'cotacao', motivo_perda:null, atualizada_em:new Date().toISOString()}).eq('id',id);
+      if(error) throw error;
+    }
+    c.status='cotacao'; c.motivoPerda=null;
+    renderMinhas();
+  }catch(e){ alert('Erro ao reabrir: '+(e.message||e)); }
 }
 function abrirCotacao(id){
   const c=cotSalvas.find(x=>x.id===id); if(!c) return;
