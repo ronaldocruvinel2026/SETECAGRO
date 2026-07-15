@@ -107,6 +107,19 @@ footer{border-top:1px solid var(--line);padding:20px 0;text-align:center;font-si
 .ci-field .cot-preco-input:focus{border-color:var(--leaf);background:var(--leaf-soft)}
 .ci-sug{padding:10px 0;font-size:15px;font-weight:700;color:var(--muted)}
 .ci-sub{padding:10px 0;font-size:16px;font-weight:800;color:var(--leaf-dark)}
+/* admin de usuários */
+.usr-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}
+.usr-card.alerta{border-color:#e5b3a5;background:#fef7f4}
+.usr-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:12px}
+.usr-nome{font-size:15px;font-weight:700}
+.usr-email{font-size:12.5px;color:var(--muted)}
+.usr-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.usr-field{display:flex;flex-direction:column;gap:4px}
+.usr-field label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+.usr-field select{width:100%;padding:9px 10px;border:1.5px solid var(--line);border-radius:9px;font-size:14px;font-weight:600;outline:none;font-family:inherit;background:#fff}
+.usr-field select:focus{border-color:var(--leaf)}
+.usr-aviso{margin-top:10px;font-size:12.5px;font-weight:600;color:#b23c1c}
+@media(max-width:640px){.usr-grid{grid-template-columns:1fr}}
 /* cotação */
 .cot-head{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:24px}
 .cot-field{display:flex;flex-direction:column;gap:6px}
@@ -254,6 +267,7 @@ table.cot tbody tr:last-child td{border-bottom:0}
       <button class="tab" id="tabCotacao">Nova Cotação</button>
       <button class="tab" id="tabMinhas">Minhas Cotações</button>
       <button class="tab" id="tabMargem">Margens & Vencimentos</button>
+      <button class="tab" id="tabUsuarios" style="display:none">Usuários</button>
     </div>
   </div>
 </header>
@@ -459,6 +473,22 @@ table.cot tbody tr:last-child td{border-bottom:0}
     </div>
     <div class="ped-scroll"><div id="pedContent"></div></div>
   </div>
+</div>
+
+<div class="panel" id="usuariosView">
+  <main>
+    <div class="wrap">
+      <h2 class="section-title">Usuários cadastrados</h2>
+      <div class="section-sub">Gerencie papéis e carteiras. Visível apenas para o administrador.</div>
+      <div class="ctrl-row" style="margin-bottom:12px">
+        <div class="search" style="flex:1">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <input id="usrBusca" type="text" placeholder="Buscar por nome ou e-mail...">
+        </div>
+      </div>
+      <div id="usrList" class="mc-list"></div>
+    </div>
+  </main>
 </div>
 
 <footer><div class="wrap">Setec Agro · JSM Group — Lista de Preços 26/27 · Valores em R$ sujeitos a alteração sem aviso prévio</div></footer>
@@ -893,16 +923,19 @@ async function aoLogar(user){
   atualizarConsultorUI();
   document.body.classList.toggle('is-admin', ehAdmin);
   document.body.classList.toggle('is-gerente', meuPapel==='gerente');
+  const tu=document.getElementById('tabUsuarios'); if(tu) tu.style.display = ehAdmin ? 'inline-block' : 'none';
   await carregarCotacoes();
   renderMinhas && renderMinhas();
 }
 
 async function fazerLogout(){
   try{ if(sbOk) await sb.auth.signOut(); }catch(e){}
-  usuario=null; ehAdmin=false; consultorAtual=null; cotSalvas=[];
-  document.body.classList.remove('is-admin');
+  usuario=null; ehAdmin=false; meuPapel='consultor'; meuGerenteId=null; consultorAtual=null; cotSalvas=[];
+  document.body.classList.remove('is-admin'); document.body.classList.remove('is-gerente');
+  const tu=document.getElementById('tabUsuarios'); if(tu) tu.style.display='none';
   atualizarConsultorUI();
   showTab('list');
+  abrirLogin(); // volta a exigir login
 }
 
 function atualizarConsultorUI(){
@@ -1299,8 +1332,84 @@ document.getElementById('pedCompartilhar') && (document.getElementById('pedCompa
 document.getElementById('tabMinhas').onclick=()=>{ if(precisaLogin()){ showTab('minhas'); } };
 document.getElementById('cotImprimir') && (document.getElementById('cotImprimir').onclick=()=>window.print());
 
+/* ===== ADMINISTRAÇÃO DE USUÁRIOS (só admin) ===== */
+let perfisCache=[];
+let usrBuscaTxt='';
+async function carregarPerfis(){
+  if(!sbOk) return;
+  try{
+    const {data,error}=await sb.from('perfis').select('*').order('nome');
+    if(error) throw error;
+    perfisCache=data||[];
+  }catch(e){ console.warn('carregarPerfis',e); perfisCache=[]; }
+}
+async function renderUsuarios(){
+  const list=document.getElementById('usrList');
+  if(!ehAdmin){ list.innerHTML='<div class="mc-vazio">Acesso restrito ao administrador.</div>'; return; }
+  await carregarPerfis();
+  const gerentes=perfisCache.filter(p=>p.papel==='gerente');
+  const q=norm(usrBuscaTxt);
+  let lista=perfisCache.slice();
+  if(q) lista=lista.filter(p=>norm(p.nome).includes(q)||norm(p.email).includes(q));
+  if(!lista.length){ list.innerHTML='<div class="mc-vazio">Nenhum usuário encontrado.</div>'; return; }
+  const nomeGer=id=>{ const g=perfisCache.find(x=>x.id===id); return g?g.nome:'—'; };
+  list.innerHTML=lista.map(p=>{
+    const gerOpts='<option value="">— sem gerente —</option>'+gerentes.filter(g=>g.id!==p.id).map(g=>'<option value="'+g.id+'"'+(g.id===p.gerente_id?' selected':'')+'>'+esc(g.nome||'')+'</option>').join('');
+    const semCarteira = (p.papel==='consultor' && !p.gerente_id);
+    return '<div class="usr-card'+(semCarteira?' alerta':'')+'">'+
+      '<div class="usr-top"><div><div class="usr-nome">'+esc(p.nome||'—')+'</div><div class="usr-email">'+esc(p.email||'')+'</div></div>'+
+        '<button class="mc-btn danger" data-delusr="'+p.id+'">Excluir</button></div>'+
+      '<div class="usr-grid">'+
+        '<div class="usr-field"><label>Função</label><select class="usr-papel" data-id="'+p.id+'">'+
+          '<option value="consultor"'+(p.papel==='consultor'?' selected':'')+'>Consultor</option>'+
+          '<option value="gerente"'+(p.papel==='gerente'?' selected':'')+'>Gerente</option>'+
+          '<option value="admin"'+(p.papel==='admin'?' selected':'')+'>Admin</option>'+
+        '</select></div>'+
+        '<div class="usr-field usr-ger" data-for="'+p.id+'" style="'+(p.papel==='consultor'?'':'display:none')+'"><label>Carteira (gerente)</label><select class="usr-gerente" data-id="'+p.id+'">'+gerOpts+'</select></div>'+
+      '</div>'+
+      (semCarteira?'<div class="usr-aviso">⚠ Consultor sem gerente designado</div>':'')+
+    '</div>';
+  }).join('');
+  // editar papel
+  list.querySelectorAll('.usr-papel').forEach(sel=>sel.onchange=async ()=>{
+    const id=sel.dataset.id; const novoPapel=sel.value;
+    const gerWrap=list.querySelector('.usr-ger[data-for="'+id+'"]');
+    if(gerWrap) gerWrap.style.display=(novoPapel==='consultor')?'block':'none';
+    const patch={papel:novoPapel};
+    if(novoPapel!=='consultor') patch.gerente_id=null;
+    await salvarPerfil(id, patch);
+  });
+  // editar gerente
+  list.querySelectorAll('.usr-gerente').forEach(sel=>sel.onchange=async ()=>{
+    await salvarPerfil(sel.dataset.id, {gerente_id: sel.value||null});
+  });
+  // excluir
+  list.querySelectorAll('[data-delusr]').forEach(b=>b.onclick=async ()=>{
+    const id=b.dataset.delusr;
+    if(b.dataset.confirm==='1'){
+      try{
+        const {error}=await sb.from('perfis').delete().eq('id',id);
+        if(error) throw error;
+        await renderUsuarios();
+      }catch(e){ alert('Erro ao excluir: '+(e.message||e)); }
+    }else{
+      b.dataset.confirm='1'; b.textContent='Confirmar?'; b.classList.add('confirming');
+      setTimeout(()=>{ if(b){ b.dataset.confirm='0'; b.textContent='Excluir'; b.classList.remove('confirming'); } },3500);
+    }
+  });
+}
+async function salvarPerfil(id, patch){
+  try{
+    const {error}=await sb.from('perfis').update(patch).eq('id',id);
+    if(error) throw error;
+    // atualizar cache local
+    const p=perfisCache.find(x=>x.id===id); if(p) Object.assign(p,patch);
+  }catch(e){ alert('Erro ao salvar: '+(e.message||e)); }
+}
+document.getElementById('usrBusca').oninput=e=>{ usrBuscaTxt=e.target.value; renderUsuarios(); };
+
 function showTab(t){
-  ['list','cotacao','minhas','margem'].forEach(x=>{
+  ['list','cotacao','minhas','margem','usuarios'].forEach(x=>{
     const v=document.getElementById(x==='list'?'listView':x+'View');
     if(v){ if(x==='list') v.style.display=(t==='list')?'block':'none'; else v.classList.toggle('on',t===x); }
   });
@@ -1308,13 +1417,16 @@ function showTab(t){
   document.getElementById('tabCotacao').classList.toggle('on',t==='cotacao');
   document.getElementById('tabMinhas').classList.toggle('on',t==='minhas');
   document.getElementById('tabMargem').classList.toggle('on',t==='margem');
+  const tu=document.getElementById('tabUsuarios'); if(tu) tu.classList.toggle('on',t==='usuarios');
   if(t==='margem'){renderMargemFab();renderMargemProd();}
   if(t==='cotacao'){renderCot();}
   if(t==='minhas'){renderMinhas();}
+  if(t==='usuarios'){renderUsuarios();}
 }
 document.getElementById('tabList').onclick=()=>showTab('list');
 document.getElementById('tabCotacao').onclick=()=>showTab('cotacao');
 document.getElementById('tabMargem').onclick=()=>showTab('margem');
+document.getElementById('tabUsuarios').onclick=()=>showTab('usuarios');
 document.getElementById('q').oninput=e=>{state.q=e.target.value;render();};
 document.getElementById('fabSel').onchange=e=>{state.fab=e.target.value;render();};
 document.getElementById('sortSel').onchange=e=>{state.sort=e.target.value;render();};
