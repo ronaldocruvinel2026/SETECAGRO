@@ -767,7 +767,8 @@ function filtered(){
 function render(){
   updatePagBar();
   const r=filtered();
-  document.getElementById('countLine').innerHTML='Exibindo <b>'+r.length+'</b> de '+PRODUTOS.length+' produtos';
+  const totalVisivel = ehAdmin ? PRODUTOS.length : PRODUTOS.filter(p=>!p.oculto).length;
+  document.getElementById('countLine').innerHTML='Exibindo <b>'+r.length+'</b> de '+totalVisivel+' produtos';
   const c=document.getElementById('content');
   if(!r.length){c.innerHTML='<div class="empty"><p>Nenhum produto encontrado.</p></div>';return;}
   if(state.view==='grid'){
@@ -904,7 +905,10 @@ function renderSugestoes(termo){
   const box=document.getElementById('cotSug');
   const q=norm(termo||'');
   if(!q){ box.classList.remove('on'); box.innerHTML=''; return; }
-  const r=PRODUTOS.filter(p=>norm(p.prod).includes(q)||norm(p.ia).includes(q)||norm(p.fab).includes(q)).slice(0,30);
+  const r=PRODUTOS.filter(p=>{
+    if(p.oculto && !ehAdmin) return false; // produtos ocultos não entram em cotação
+    return norm(p.prod).includes(q)||norm(p.ia).includes(q)||norm(p.fab).includes(q);
+  }).slice(0,30);
   if(!r.length){ box.classList.add('on'); box.innerHTML='<div class="sug-vazio">Nenhum produto encontrado.</div>'; return; }
   box.classList.add('on');
   box.innerHTML=r.map(p=>{
@@ -1060,6 +1064,8 @@ async function aoLogar(user){
   const tm=document.getElementById('tabMargem'); if(tm) tm.style.display = ehAdmin ? 'inline-block' : 'none';
   await carregarCotacoes();
   renderMinhas && renderMinhas();
+  // redesenha a lista de preços com as permissões do usuário (esconde produtos ocultos)
+  try{ render(); }catch(e){}
 }
 
 async function fazerLogout(){
