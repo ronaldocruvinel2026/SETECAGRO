@@ -611,7 +611,7 @@ async function carregarProdutos(){
     if(data && data.length){
       PRODUTOS.length=0;
       data.forEach((r,i)=>{
-        PRODUTOS.push({_id:r.id, cat:r.cat, fab:r.fab, prod:r.prod, ia:r.ia||'', custo:r.preco, venc:r.vencimento||'04/2027'});
+        PRODUTOS.push({_id:r.id, cat:r.cat, fab:r.fab, prod:r.prod, ia:r.ia||'', custo:r.preco, venc:r.vencimento||'04/2027', oculto:!!r.oculto});
       });
       PRODUTOS.forEach((p,i)=>p._i=i);
       // reconstruir lista de fabricantes
@@ -738,6 +738,8 @@ function updatePagBar(){ /* faixa removida da tela inicial */ }
 /* ===== LISTA ===== */
 function filtered(){
   let r=PRODUTOS.filter(p=>{
+    // produtos marcados como ocultos não aparecem para consultores/gerentes
+    if(p.oculto && !ehAdmin) return false;
     if(state.cat!=='ALL'&&p.cat!==state.cat)return false;
     if(state.fab!=='ALL'&&p.fab!==state.fab)return false;
     if(state.q){const q=norm(state.q);if(!(norm(p.prod).includes(q)||norm(p.ia).includes(q)||norm(p.fab).includes(q)))return false;}
@@ -766,7 +768,7 @@ function render(){
     c.innerHTML='<div class="grid">'+r.map(p=>{
       const pv=precoVenda(p);
       const price=pv?('<span class="pc-price"><span class="cur">R$</span>'+brl(pv)+'</span>'):'';
-      return '<div class="pcard"><div class="pc-top"><span class="pc-fab">'+esc(p.fab||'—')+'</span><span class="pc-cat">'+p.cat+'</span></div><div class="pc-name">'+esc(p.prod||'—')+'</div>'+(p.ia?'<div class="pc-ia">'+esc(p.ia)+'</div>':'')+'<div class="pc-price-row">'+price+'</div></div>';
+      return '<div class="pcard'+(p.oculto?' pc-oculto':'')+'"><div class="pc-top"><span class="pc-fab">'+esc(p.fab||'—')+'</span><span class="pc-cat">'+(p.oculto?'OCULTO':p.cat)+'</span></div><div class="pc-name">'+esc(p.prod||'—')+'</div>'+(p.ia?'<div class="pc-ia">'+esc(p.ia)+'</div>':'')+'<div class="pc-price-row">'+price+'</div></div>';
     }).join('')+'</div>';
   }else{
     c.innerHTML='<div class="tbl-wrap"><table><thead><tr><th data-s="fab">Fabricante</th><th data-s="prod">Produto</th><th data-s="ia">Princípio Ativo</th><th data-s="price-asc" style="text-align:right">Preço</th></tr></thead><tbody>'+
