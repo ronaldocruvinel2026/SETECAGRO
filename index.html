@@ -180,6 +180,10 @@ table.cot tbody tr:last-child td{border-bottom:0}
 .mc-motivo{font-size:12px;color:#b23c1c;font-style:italic;margin-top:4px}
 .mc-btn.perda{background:#fff;color:#b23c1c;border:1.5px solid #e5b3a5}
 .mc-btn.perda:hover{background:#fbe6e0}
+.mc-filtros{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.mc-fbtn{background:#fff;border:1.5px solid var(--line);color:var(--muted);padding:8px 16px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap}
+.mc-fbtn:hover{border-color:var(--leaf);color:var(--leaf-dark)}
+.mc-fbtn.on{background:var(--leaf-dark);border-color:var(--leaf-dark);color:#fff}
 .mc-card.is-pedido{border-left:4px solid var(--leaf)}
 .mc-card.is-cotacao{border-left:4px solid var(--gold)}
 .mc-consultor{font-size:12px;color:var(--muted);font-weight:600;margin-top:2px}
@@ -284,7 +288,7 @@ body.login-aberto{overflow:hidden}
       <button class="tab on" id="tabList">Lista de Preços</button>
       <button class="tab" id="tabCotacao">Nova Cotação</button>
       <button class="tab" id="tabMinhas">Minhas Cotações</button>
-      <button class="tab" id="tabMargem">Margens & Vencimentos</button>
+      <button class="tab" id="tabMargem" style="display:none">Margens & Vencimentos</button>
       <button class="tab" id="tabUsuarios" style="display:none">Usuários</button>
     </div>
   </div>
@@ -385,6 +389,18 @@ body.login-aberto{overflow:hidden}
     <div class="wrap">
       <h2 class="section-title">Minhas Cotações</h2>
       <div class="section-sub" id="minhasSub">Cotações salvas por você.</div>
+      <div class="ctrl-row" style="margin-bottom:12px">
+        <div class="search" style="flex:1;min-width:220px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <input id="mcBusca" type="text" placeholder="Buscar por cliente, fazenda ou nº do pedido...">
+        </div>
+      </div>
+      <div class="mc-filtros" id="mcFiltros">
+        <button class="mc-fbtn on" data-f="todas">Todas</button>
+        <button class="mc-fbtn" data-f="cotacao">Cotações</button>
+        <button class="mc-fbtn" data-f="pedido">Pedidos</button>
+        <button class="mc-fbtn" data-f="perdida">Perdidas</button>
+      </div>
       <div class="mc-list" id="mcList"></div>
     </div>
   </main>
@@ -1032,6 +1048,8 @@ async function aoLogar(user){
   document.body.classList.toggle('is-admin', ehAdmin);
   document.body.classList.toggle('is-gerente', meuPapel==='gerente');
   const tu=document.getElementById('tabUsuarios'); if(tu) tu.style.display = ehAdmin ? 'inline-block' : 'none';
+  // Margens & Vencimentos: apenas admin (consultor/gerente não acessam)
+  const tm=document.getElementById('tabMargem'); if(tm) tm.style.display = ehAdmin ? 'inline-block' : 'none';
   await carregarCotacoes();
   renderMinhas && renderMinhas();
 }
@@ -1041,6 +1059,7 @@ async function fazerLogout(){
   usuario=null; ehAdmin=false; meuPapel='consultor'; meuGerenteId=null; consultorAtual=null; cotSalvas=[];
   document.body.classList.remove('is-admin'); document.body.classList.remove('is-gerente');
   const tu=document.getElementById('tabUsuarios'); if(tu) tu.style.display='none';
+  const tm=document.getElementById('tabMargem'); if(tm) tm.style.display='none';
   atualizarConsultorUI();
   showTab('list');
   abrirLogin(); // volta a exigir login
@@ -1230,6 +1249,26 @@ document.getElementById('cotSalvar').onclick=async ()=>{
 function totalCot(c){
   return c.itens.reduce((s,it)=>s+((it.preco&&it.qtd)?it.preco*it.qtd:0),0);
 }
+/* ===== filtros e busca da aba Minhas Cotações ===== */
+let mcFiltro='todas';
+let mcBusca='';
+function atualizarContadoresMC(){
+  const cont={todas:cotSalvas.length,
+    cotacao:cotSalvas.filter(c=>c.status!=='pedido'&&c.status!=='perdida').length,
+    pedido:cotSalvas.filter(c=>c.status==='pedido').length,
+    perdida:cotSalvas.filter(c=>c.status==='perdida').length};
+  const rot={todas:'Todas',cotacao:'Cotações',pedido:'Pedidos',perdida:'Perdidas'};
+  document.querySelectorAll('#mcFiltros .mc-fbtn').forEach(b=>{
+    const f=b.dataset.f;
+    b.textContent=rot[f]+' ('+(cont[f]||0)+')';
+    b.classList.toggle('on', f===mcFiltro);
+  });
+}
+document.querySelectorAll('#mcFiltros .mc-fbtn').forEach(b=>{
+  b.onclick=()=>{ mcFiltro=b.dataset.f; renderMinhas(); };
+});
+document.getElementById('mcBusca').oninput=e=>{ mcBusca=e.target.value; renderMinhas(); };
+
 function renderMinhas(){
   const list=document.getElementById('mcList');
   const sub=document.getElementById('minhasSub');
@@ -1237,8 +1276,29 @@ function renderMinhas(){
   const papelTxt = ehAdmin ? 'Administrador — todas as cotações e pedidos.' : (meuPapel==='gerente' ? ('Gerente '+usuario.nome+' — sua carteira.') : ('Cotações de '+usuario.nome+'.'));
   sub.textContent = papelTxt;
   // RLS já filtra no banco: consultor vê as dele, gerente vê a carteira, admin vê todas
-  const minhas=cotSalvas.slice();
-  if(!minhas.length){ list.innerHTML='<div class="mc-vazio">Nenhuma cotação salva ainda. Crie uma na aba "Cotação".</div>'; return; }
+  let minhas=cotSalvas.slice();
+  const totalGeral=minhas.length;
+  // filtro por situação
+  if(mcFiltro==='cotacao') minhas=minhas.filter(c=>c.status!=='pedido'&&c.status!=='perdida');
+  else if(mcFiltro==='pedido') minhas=minhas.filter(c=>c.status==='pedido');
+  else if(mcFiltro==='perdida') minhas=minhas.filter(c=>c.status==='perdida');
+  // busca por cliente, fazenda ou número do pedido
+  const q=norm(mcBusca);
+  if(q){
+    minhas=minhas.filter(c=>
+      norm(c.cliente||'').includes(q) ||
+      norm(c.fazenda||'').includes(q) ||
+      norm(c.mun||'').includes(q) ||
+      norm(c.consultorNome||'').includes(q) ||
+      String(c.numero||'').includes(q)
+    );
+  }
+  // contadores nos botões de filtro
+  atualizarContadoresMC();
+  if(!minhas.length){
+    list.innerHTML='<div class="mc-vazio">'+(totalGeral? 'Nenhum resultado para esse filtro/busca.' : 'Nenhuma cotação salva ainda. Crie uma na aba "Cotação".')+'</div>';
+    return;
+  }
   const icoCot='<svg class="mc-ico cot" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12h6M9 16h6M9 8h6"/><rect x="4" y="3" width="16" height="18" rx="2"/></svg>';
   const icoPed='<svg class="mc-ico ped" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>';
   const icoPerd='<svg class="mc-ico perd" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>';
@@ -1527,6 +1587,8 @@ async function salvarPerfil(id, patch){
 document.getElementById('usrBusca').oninput=e=>{ usrBuscaTxt=e.target.value; renderUsuarios(); };
 
 function showTab(t){
+  // proteção: abas restritas só para admin
+  if((t==='margem'||t==='usuarios') && !ehAdmin){ t='list'; }
   ['list','cotacao','minhas','margem','usuarios'].forEach(x=>{
     const v=document.getElementById(x==='list'?'listView':x+'View');
     if(v){ if(x==='list') v.style.display=(t==='list')?'block':'none'; else v.classList.toggle('on',t===x); }
