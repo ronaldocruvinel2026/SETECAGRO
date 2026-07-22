@@ -147,6 +147,9 @@ footer{border-top:1px solid var(--line);padding:20px 0;text-align:center;font-si
 .sug-manual .sm-s{font-size:12px;color:var(--muted)}
 .ci-card.ci-manual{border-color:var(--gold);background:#fffdf7}
 .ci-fab.manual{color:#8a6d1f}
+.nome-input{width:100%;font-size:15px;font-weight:700;line-height:1.3;color:var(--ink);font-family:inherit;padding:6px 8px;border:1.5px dashed var(--gold);border-radius:8px;background:#fff;outline:none}
+.nome-input:focus{border-style:solid;border-color:var(--leaf);background:var(--leaf-soft)}
+.nome-input::placeholder{color:var(--muted);font-weight:400}
 .sug-nome{font-weight:600;font-size:14px}
 .sug-fab{font-size:11px;font-weight:700;color:var(--leaf);text-transform:uppercase}
 .sug-preco{font-weight:800;color:var(--leaf-dark);white-space:nowrap}
@@ -970,7 +973,7 @@ function renderCot(){
     total+=sub;
     if(sug&&it.qtd) totalSug+=sug*it.qtd;
     const cab = manual
-      ? '<div class="ci-nome"><span class="ci-fab manual">Digitado</span>'+esc(it.nome||'')+'</div>'
+      ? '<div class="ci-nome"><span class="ci-fab manual">Digitado</span><input class="nome-input" data-idx="'+idx+'" type="text" value="'+esc(it.nome||'')+'" placeholder="Nome do produto"></div>'
       : '<div class="ci-nome"><span class="ci-fab">'+esc(p.fab||'')+'</span>'+esc(p.prod||'')+'</div>';
     return '<div class="ci-card'+(manual?' ci-manual':'')+'">'+
       '<div class="ci-head">'+cab+
@@ -991,6 +994,16 @@ function renderCot(){
   }
   document.getElementById('cotTotal').innerHTML=descTxt+'<span class="lbl">Total</span><span class="val">R$ '+brl(total)+'</span>';
 
+  body.querySelectorAll('.nome-input').forEach(inp=>{
+    // atualiza o nome sem redesenhar (para não perder o foco enquanto digita)
+    inp.oninput=()=>{ const idx=+inp.dataset.idx; if(cotItens[idx]) cotItens[idx].nome=inp.value; };
+    inp.onblur=()=>{
+      const idx=+inp.dataset.idx;
+      if(cotItens[idx]){ cotItens[idx].nome=(inp.value||'').trim().toUpperCase(); }
+      renderCot();
+    };
+    inp.onkeydown=e=>{ if(e.key==='Enter') inp.blur(); };
+  });
   body.querySelectorAll('.qtd-input').forEach(inp=>{
     inp.onchange=()=>{
       const idx=+inp.dataset.idx;
@@ -1265,6 +1278,8 @@ document.getElementById('cotSalvar').onclick=async ()=>{
   const cliente=document.getElementById('cotCliente').value.trim();
   if(!cliente){ alert('Informe o nome do cliente.'); return; }
   if(!cotItens.length){ alert('Adicione pelo menos um produto.'); return; }
+  const semNome=cotItens.some(it=>it.manual && !(it.nome||'').trim());
+  if(semNome){ alert('Há um produto digitado sem nome. Preencha o nome antes de salvar.'); return; }
   const d=coletarDadosCotacao();
   const btn=document.getElementById('cotSalvar'); const t=btn.textContent; btn.textContent='Salvando...'; btn.disabled=true;
   try{
