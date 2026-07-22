@@ -919,23 +919,27 @@ function renderSugestoes(termo){
     if(p.oculto && !ehAdmin) return false; // produtos ocultos não entram em cotação
     return norm(p.prod).includes(q)||norm(p.ia).includes(q)||norm(p.fab).includes(q);
   }).slice(0,30);
-  if(!r.length){
-    box.classList.add('on');
-    box.innerHTML='<div class="sug-vazio">Nenhum produto encontrado na lista.</div>'+
-      '<div class="sug-manual" id="sugManual"><span class="sm-ico">+</span><div><div class="sm-t">Adicionar "'+esc(termo)+'" manualmente</div><div class="sm-s">Você digita o preço na cotação</div></div></div>';
+  const btnManual='<div class="sug-manual" id="sugManual"><span class="sm-ico">+</span><div><div class="sm-t">Adicionar "'+esc(termo)+'" manualmente</div><div class="sm-s">Você digita o preço na cotação</div></div></div>';
+  function ligarManual(){
     const bm=document.getElementById('sugManual');
     if(bm) bm.onclick=()=>{
       addItemManual(termo);
       document.getElementById('cotBusca').value='';
       box.classList.remove('on'); box.innerHTML='';
     };
+  }
+  if(!r.length){
+    box.classList.add('on');
+    box.innerHTML='<div class="sug-vazio">Nenhum produto encontrado na lista.</div>'+btnManual;
+    ligarManual();
     return;
   }
   box.classList.add('on');
   box.innerHTML=r.map(p=>{
     const pv=precoSugeridoCot(p);
     return '<div class="sug-item" data-i="'+p._i+'"><div><div class="sug-fab">'+esc(p.fab||'')+'</div><div class="sug-nome">'+esc(p.prod||'')+'</div></div><div class="sug-preco">'+(pv?('R$ '+brl(pv)):'—')+'</div></div>';
-  }).join('');
+  }).join('')+btnManual;
+  ligarManual();
   box.querySelectorAll('.sug-item').forEach(it=>it.onclick=()=>{
     addItem(+it.dataset.i);
     document.getElementById('cotBusca').value='';
