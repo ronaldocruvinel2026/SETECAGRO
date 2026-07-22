@@ -140,6 +140,13 @@ footer{border-top:1px solid var(--line);padding:20px 0;text-align:center;font-si
 .sug-item{padding:11px 14px;border-bottom:1px solid var(--line);cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:12px}
 .sug-item:last-child{border-bottom:0}
 .sug-item:hover{background:var(--leaf-soft)}
+.sug-manual{padding:12px 14px;display:flex;align-items:center;gap:12px;cursor:pointer;border-top:1px solid var(--line);background:var(--gold-soft)}
+.sug-manual:hover{background:#f6ead0}
+.sug-manual .sm-ico{width:28px;height:28px;flex-shrink:0;border-radius:8px;background:var(--gold);color:#fff;display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:700;line-height:1}
+.sug-manual .sm-t{font-size:14px;font-weight:700;color:var(--leaf-dark)}
+.sug-manual .sm-s{font-size:12px;color:var(--muted)}
+.ci-card.ci-manual{border-color:var(--gold);background:#fffdf7}
+.ci-fab.manual{color:#8a6d1f}
 .sug-nome{font-weight:600;font-size:14px}
 .sug-fab{font-size:11px;font-weight:700;color:var(--leaf);text-transform:uppercase}
 .sug-preco{font-weight:800;color:var(--leaf-dark);white-space:nowrap}
@@ -909,7 +916,18 @@ function renderSugestoes(termo){
     if(p.oculto && !ehAdmin) return false; // produtos ocultos não entram em cotação
     return norm(p.prod).includes(q)||norm(p.ia).includes(q)||norm(p.fab).includes(q);
   }).slice(0,30);
-  if(!r.length){ box.classList.add('on'); box.innerHTML='<div class="sug-vazio">Nenhum produto encontrado.</div>'; return; }
+  if(!r.length){
+    box.classList.add('on');
+    box.innerHTML='<div class="sug-vazio">Nenhum produto encontrado na lista.</div>'+
+      '<div class="sug-manual" id="sugManual"><span class="sm-ico">+</span><div><div class="sm-t">Adicionar "'+esc(termo)+'" manualmente</div><div class="sm-s">Você digita o preço na cotação</div></div></div>';
+    const bm=document.getElementById('sugManual');
+    if(bm) bm.onclick=()=>{
+      addItemManual(termo);
+      document.getElementById('cotBusca').value='';
+      box.classList.remove('on'); box.innerHTML='';
+    };
+    return;
+  }
   box.classList.add('on');
   box.innerHTML=r.map(p=>{
     const pv=precoSugeridoCot(p);
@@ -922,8 +940,15 @@ function renderSugestoes(termo){
   });
 }
 function addItem(i){
-  if(cotItens.some(x=>x.i===i)){ alert('Este produto já está na cotação.'); return; }
+  if(cotItens.some(x=>!x.manual && x.i===i)){ alert('Este produto já está na cotação.'); return; }
   cotItens.push({i:i, qtd:1, precoCot:null});
+  renderCot();
+}
+/* item digitado manualmente (produto que não está na lista) */
+function addItemManual(nome){
+  const n=(nome||'').trim();
+  if(!n) return;
+  cotItens.push({i:null, manual:true, nome:n.toUpperCase(), qtd:1, precoCot:null});
   renderCot();
 }
 function renderCot(){
@@ -935,16 +960,20 @@ function renderCot(){
   }
   let total=0, totalSug=0;
   body.innerHTML=cotItens.map((it,idx)=>{
-    const p=PRODUTOS[it.i];
-    const sug=precoSugeridoCot(p);
+    const manual = !!it.manual;
+    const p = manual ? null : PRODUTOS[it.i];
+    const sug = manual ? null : precoSugeridoCot(p);
     // preço cotação NÃO é preenchido automaticamente: começa vazio (usuário digita)
     const precoCot=(it.precoCot!==null&&it.precoCot!==undefined)?it.precoCot:null;
     const precoUsado=(precoCot!=null)?precoCot:sug; // para o subtotal usa o cotado; se vazio, usa sugerido como referência
     const sub=(precoUsado&&it.qtd)?precoUsado*it.qtd:0;
     total+=sub;
     if(sug&&it.qtd) totalSug+=sug*it.qtd;
-    return '<div class="ci-card">'+
-      '<div class="ci-head"><div class="ci-nome"><span class="ci-fab">'+esc(p.fab||'')+'</span>'+esc(p.prod||'')+'</div>'+
+    const cab = manual
+      ? '<div class="ci-nome"><span class="ci-fab manual">Digitado</span>'+esc(it.nome||'')+'</div>'
+      : '<div class="ci-nome"><span class="ci-fab">'+esc(p.fab||'')+'</span>'+esc(p.prod||'')+'</div>';
+    return '<div class="ci-card'+(manual?' ci-manual':'')+'">'+
+      '<div class="ci-head">'+cab+
         '<button class="ci-del" data-idx="'+idx+'" title="Remover">✕</button></div>'+
       '<div class="ci-grid">'+
         '<div class="ci-field"><label>Quantidade</label><input class="qtd-input" data-idx="'+idx+'" type="text" inputmode="decimal" value="'+String(it.qtd).replace('.',',')+'"></div>'+
@@ -1219,6 +1248,9 @@ function coletarDadosCotacao(){
     mun:document.getElementById('cotMun').value.trim(),
     pagAno:cotPagAno, pagMes:cotPagMes,
     itens:cotItens.map(it=>{
+      if(it.manual){
+        return {fab:'',prod:it.nome||'',ia:'',unid:it.unid||'LT',cultura:it.cultura||'',qtd:it.qtd,sug:null,preco:(it.precoCot!=null?it.precoCot:null),manual:true};
+      }
       const p=PRODUTOS[it.i];
       const sug=precoSugeridoCot(p);
       const preco=(it.precoCot!=null)?it.precoCot:sug;
@@ -1402,11 +1434,14 @@ function abrirCotacao(id){
   document.getElementById('cotMun').value=c.mun||'';
   cotPagAno=c.pagAno; cotPagMes=c.pagMes;
   document.getElementById('cotPagSel').value=c.pagAno+'-'+c.pagMes;
-  // reconstruir itens: localizar índice do produto pelo fab+prod
+  // reconstruir itens: localizar índice do produto pelo fab+prod (itens manuais voltam como digitados)
   cotItens=c.itens.map(it=>{
+    if(it.manual){ return {i:null, manual:true, nome:it.prod||'', qtd:it.qtd, precoCot:it.preco, cultura:it.cultura}; }
     const idx=PRODUTOS.findIndex(p=>p.fab===it.fab&&p.prod===it.prod);
-    return {i:idx>=0?idx:0, qtd:it.qtd, precoCot:it.preco, cultura:it.cultura};
-  }).filter(x=>x.i>=0);
+    // se o produto não existe mais na lista, mantém como item digitado para não perder o registro
+    if(idx<0){ return {i:null, manual:true, nome:it.prod||'', qtd:it.qtd, precoCot:it.preco, cultura:it.cultura}; }
+    return {i:idx, qtd:it.qtd, precoCot:it.preco, cultura:it.cultura};
+  });
   showTab('cotacao');
   renderCot();
 }
