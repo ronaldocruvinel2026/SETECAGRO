@@ -200,6 +200,29 @@ table.cot tbody tr:last-child td{border-bottom:0}
 .mc-motivo{font-size:12px;color:#b23c1c;font-style:italic;margin-top:4px}
 .mc-btn.perda{background:#fff;color:#b23c1c;border:1.5px solid #e5b3a5}
 .mc-btn.perda:hover{background:#fbe6e0}
+/* ===== margem (gerente/admin) ===== */
+.mc-margem{display:inline-block;margin-top:5px;margin-left:6px;font-size:11.5px;font-weight:800;padding:3px 9px;border-radius:6px;letter-spacing:.2px}
+.mg-boa{background:var(--leaf-soft);color:var(--leaf-dark)}
+.mg-media{background:var(--gold-soft);color:#8a6d1f}
+.mg-baixa{background:#fdf0e4;color:#b06a1c}
+.mg-neg{background:#fbe6e0;color:#b23c1c}
+.mg-sem{background:#eee;color:var(--muted)}
+.mg-painel{max-width:820px;margin:16px auto 0;background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:0 2px 10px rgba(31,74,55,.06)}
+.mg-cab{margin-bottom:12px}
+.mg-tit{font-size:15px;font-weight:800;color:var(--leaf-dark);display:block}
+.mg-sub{font-size:11.5px;color:var(--muted)}
+.mg-tbl{width:100%;border-collapse:collapse;font-size:12.5px}
+.mg-tbl th{background:var(--leaf-soft);color:var(--leaf-dark);text-align:left;padding:7px 9px;font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;font-weight:800}
+.mg-tbl td{padding:7px 9px;border-bottom:1px solid var(--line)}
+.mg-tbl td.c,.mg-tbl th.c{text-align:center}
+.mg-tbl td.r,.mg-tbl th.r{text-align:right}
+.mg-tbl td.mg-boa,.mg-tbl td.mg-media,.mg-tbl td.mg-baixa,.mg-tbl td.mg-neg{font-weight:800;border-radius:0}
+.mg-resumo{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+.mg-resumo>div{flex:1;min-width:120px;background:var(--bg);border-radius:10px;padding:10px 12px}
+.mg-resumo span{display:block;font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;font-weight:700}
+.mg-resumo b{font-size:16px;color:var(--leaf-dark)}
+.mg-resumo .mg-destaque{border:1.5px solid currentColor}
+@media print{ .mg-painel{display:none!important} }
 .mc-filtros{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
 .mc-fbtn{background:#fff;border:1.5px solid var(--line);color:var(--muted);padding:8px 16px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap}
 .mc-fbtn:hover{border-color:var(--leaf);color:var(--leaf-dark)}
@@ -721,6 +744,47 @@ function mesesEntre(a_ano,a_mes,b_ano,b_mes){ return (b_ano-a_ano)*12+(b_mes-a_m
 function margemDe(p){
   if(margemProd[p._i]!==undefined) return margemProd[p._i];
   return margemFab[p.fab]!==undefined?margemFab[p.fab]:MARGEM_DEFAULT;
+}
+/* ===== MARGEM REAL (custo x preço praticado) — visível para gerente e admin =====
+   Usa o mesmo critério do cálculo de preço: margem sobre a venda.
+   O custo é trazido a valor presente na data de pagamento da cotação. */
+function podeVerMargem(){ return ehAdmin || meuPapel==='gerente'; }
+function custoNaData(p, ano, mes){
+  if(!p) return null;
+  const c=p.custo; const v=parseVenc(p.venc);
+  if(!c||c<=0||!v) return null;
+  const n=mesesEntre(ano,mes,v.ano,v.mes);
+  return c/Math.pow(1+TAXA,n);
+}
+// margem de um item: (preço - custo) / preço
+function margemItem(p, precoPraticado, ano, mes){
+  if(!precoPraticado||precoPraticado<=0) return null;
+  const custo=custoNaData(p, ano, mes);
+  if(custo===null) return null;
+  return (precoPraticado-custo)/precoPraticado;
+}
+// margem consolidada de uma cotação salva (usa os itens gravados)
+function margemCotacao(c){
+  if(!c||!c.itens||!c.itens.length) return null;
+  let receita=0, custoTotal=0, temCusto=false;
+  c.itens.forEach(it=>{
+    const preco=it.preco, qtd=it.qtd||0;
+    if(!preco||!qtd) return;
+    receita+=preco*qtd;
+    // localizar o produto no catálogo para saber o custo
+    const p=PRODUTOS.find(x=>x.fab===it.fab&&x.prod===it.prod);
+    const cu=custoNaData(p, c.pagAno, c.pagMes);
+    if(cu!==null){ custoTotal+=cu*qtd; temCusto=true; }
+  });
+  if(!temCusto||receita<=0) return null;
+  return {pct:(receita-custoTotal)/receita, lucro:receita-custoTotal, receita:receita};
+}
+function corMargem(pct){
+  if(pct===null||pct===undefined) return '';
+  if(pct<0) return 'mg-neg';
+  if(pct<0.10) return 'mg-baixa';
+  if(pct<0.20) return 'mg-media';
+  return 'mg-boa';
 }
 function precoVenda(p){
   const c=p.custo; const v=parseVenc(p.venc);
@@ -1390,6 +1454,14 @@ function renderMinhas(){
     else if(ehPerdida) stat='<span class="mc-status perdida">Cotação perdida</span>';
     else stat='<span class="mc-status cotacao">Cotação</span>';
     const quemFez = (ehAdmin||meuPapel==='gerente') ? ('<div class="mc-consultor">Consultor: '+esc(c.consultorNome||'—')+'</div>') : '';
+    // margem da cotação (só gerente/admin)
+    let mgHtml='';
+    if(podeVerMargem()){
+      const mg=margemCotacao(c);
+      mgHtml = mg
+        ? '<span class="mc-margem '+corMargem(mg.pct)+'">Margem '+fmtPct(mg.pct)+'% · R$ '+brl(mg.lucro)+'</span>'
+        : '<span class="mc-margem mg-sem">Margem indisponível</span>';
+    }
     const motivo = ehPerdida && c.motivoPerda ? ('<div class="mc-motivo">Motivo: '+esc(c.motivoPerda)+'</div>') : '';
     const classe = ehPedido?'is-pedido':(ehPerdida?'is-perdida':'is-cotacao');
     // botões: pedido tem "Ver pedido"; cotação (não perdida) tem "Gerar pedido" e "Marcar perdida"
@@ -1403,7 +1475,7 @@ function renderMinhas(){
       '<div class="mc-icowrap">'+ico+'</div>'+
       '<div class="mc-info"><div class="mc-cliente">'+esc(c.cliente)+'</div>'+
       '<div class="mc-meta">'+(c.fazenda?('Fazenda: '+esc(c.fazenda)+' · '):'')+c.itens.length+' item(ns) · '+dt+'</div>'+
-      quemFez+stat+motivo+'</div>'+
+      quemFez+stat+mgHtml+motivo+'</div>'+
       '<div class="mc-total">R$ '+brl(t)+'</div>'+
       '<div class="mc-btns">'+botoes+'</div></div>';
   }).join('');
@@ -1527,8 +1599,40 @@ function imprimirPedido(id){
     '<div class="obs">AS MERCADORIAS CONSTANTES DESTE PEDIDO SE DESTINAM EXCLUSIVAMENTE ÀS ATIVIDADES AGRÍCOLAS OU PECUÁRIAS. Os preços se estendem por mercadorias postas em nossa loja, ficando a cargo do comprador as despesas de despacho, frete e carreto. Pedido válido somente após aprovação do Departamento de Crédito. UMA VEZ FATURADO, A VENDEDORA NÃO ACEITA DEVOLUÇÃO DE MERCADORIA.'+
       '<div class="assin">Assinatura do(a) Comprador(a) / Por extenso</div></div>'+
     '</div>';
+  // painel de margem item a item — só na tela, para gerente/admin (nunca vai para a impressão)
+  let painelMargem='';
+  if(podeVerMargem()){
+    let receita=0, custoTot=0;
+    const linhasMg=c.itens.map(it=>{
+      const p=PRODUTOS.find(x=>x.fab===it.fab&&x.prod===it.prod);
+      const cu=custoNaData(p, c.pagAno, c.pagMes);
+      const qtd=it.qtd||0, preco=it.preco||0;
+      const mg=margemItem(p, preco, c.pagAno, c.pagMes);
+      if(preco&&qtd){ receita+=preco*qtd; if(cu!==null) custoTot+=cu*qtd; }
+      const lucroItem=(cu!==null&&preco&&qtd)?((preco-cu)*qtd):null;
+      return '<tr>'+
+        '<td>'+esc(it.prod||'')+'</td>'+
+        '<td class="c">'+(qtd||'')+'</td>'+
+        '<td class="r">'+(cu!==null?brl(cu):'—')+'</td>'+
+        '<td class="r">'+(preco?brl(preco):'—')+'</td>'+
+        '<td class="r '+(mg!==null?corMargem(mg):'')+'">'+(mg!==null?(fmtPct(mg)+'%'):'—')+'</td>'+
+        '<td class="r">'+(lucroItem!==null?brl(lucroItem):'—')+'</td>'+
+      '</tr>';
+    }).join('');
+    const mgTotal=receita>0?((receita-custoTot)/receita):null;
+    painelMargem='<div class="mg-painel no-print">'+
+      '<div class="mg-cab"><span class="mg-tit">Análise de margem</span><span class="mg-sub">Visível apenas para gerentes e administrador · não aparece no pedido impresso</span></div>'+
+      '<table class="mg-tbl"><thead><tr><th>Produto</th><th class="c">Qtd</th><th class="r">Custo unit.</th><th class="r">Preço unit.</th><th class="r">Margem</th><th class="r">Lucro</th></tr></thead>'+
+      '<tbody>'+linhasMg+'</tbody></table>'+
+      '<div class="mg-resumo">'+
+        '<div><span>Receita</span><b>R$ '+brl(receita)+'</b></div>'+
+        '<div><span>Custo</span><b>R$ '+brl(custoTot)+'</b></div>'+
+        '<div><span>Lucro</span><b>R$ '+brl(receita-custoTot)+'</b></div>'+
+        '<div class="mg-destaque '+(mgTotal!==null?corMargem(mgTotal):'')+'"><span>Margem total</span><b>'+(mgTotal!==null?(fmtPct(mgTotal)+'%'):'—')+'</b></div>'+
+      '</div></div>';
+  }
   const bg=document.getElementById('pedBg');
-  document.getElementById('pedContent').innerHTML=pedidoHtml;
+  document.getElementById('pedContent').innerHTML=pedidoHtml+painelMargem;
   bg.classList.add('on');
 }
 document.getElementById('pedFechar') && (document.getElementById('pedFechar').onclick=()=>document.getElementById('pedBg').classList.remove('on'));
