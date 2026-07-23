@@ -1816,7 +1816,7 @@ document.getElementById('pedCompartilhar') && (document.getElementById('pedCompa
       a.href=url; a.download=nomeArq;
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
       setTimeout(()=>URL.revokeObjectURL(url),3000);
-      alert('PDF "'+nomeArq+'" salvo. Abra seus Arquivos/Downloads para enviar por WhatsApp, e-mail, etc.');
+      alert('Seu navegador não permitiu o compartilhamento direto, então o PDF "'+nomeArq+'" foi salvo.\n\nDica: no iPhone, abrindo o sistema pelo Safari o botão compartilha direto no WhatsApp, e-mail etc.');
     }catch(err){ alert('Não foi possível salvar o PDF: '+(err&&err.message?err.message:err)); }
   }
   try{
@@ -1825,8 +1825,9 @@ document.getElementById('pedCompartilhar') && (document.getElementById('pedCompa
       return;
     }
     // captura o documento do pedido (o painel de margem fica de fora)
-    const canvas=await html2canvas(doc,{scale:2,backgroundColor:'#ffffff',useCORS:true});
-    const img=canvas.toDataURL('image/jpeg',0.92);
+    // escala 1.7 mantém o texto nítido e deixa o PDF leve (facilita o envio por WhatsApp)
+    const canvas=await html2canvas(doc,{scale:1.7,backgroundColor:'#ffffff',useCORS:true});
+    const img=canvas.toDataURL('image/jpeg',0.86);
     // monta o PDF em A4 retrato, ajustando a imagem à largura da página
     const {jsPDF}=window.jspdf;
     const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
@@ -1842,16 +1843,31 @@ document.getElementById('pedCompartilhar') && (document.getElementById('pedCompa
     const blob=pdf.output('blob');
     let arquivo=null;
     try{ arquivo=new File([blob],nomeArq,{type:'application/pdf'}); }catch(_){}
-    if(arquivo && navigator.canShare && navigator.canShare({files:[arquivo]})){
-      try{
-        await navigator.share({files:[arquivo], title:titulo});
-      }catch(e){
-        if(e && e.name==='AbortError'){ /* usuário cancelou */ }
-        else { baixarPdf(blob); }
+
+    // 1ª tentativa: compartilhamento nativo com o arquivo (abre WhatsApp, e-mail etc.)
+    let compartilhou=false;
+    if(arquivo && navigator.share){
+      const podeArquivo = !navigator.canShare || navigator.canShare({files:[arquivo]});
+      if(podeArquivo){
+        try{
+          await navigator.share({files:[arquivo], title:titulo});
+          compartilhou=true;
+        }catch(e){
+          if(e && e.name==='AbortError'){ compartilhou=true; } // usuário fechou o menu
+        }
       }
-    }else{
-      baixarPdf(blob);
     }
+    // 2ª tentativa: compartilhar só com o arquivo (alguns navegadores recusam title junto)
+    if(!compartilhou && arquivo && navigator.share){
+      try{
+        await navigator.share({files:[arquivo]});
+        compartilhou=true;
+      }catch(e){
+        if(e && e.name==='AbortError'){ compartilhou=true; }
+      }
+    }
+    // último recurso: salvar o arquivo para o usuário enviar manualmente
+    if(!compartilhou){ baixarPdf(blob); }
   }catch(e){
     alert('Não foi possível gerar o PDF: '+(e&&e.message?e.message:e));
   }finally{
