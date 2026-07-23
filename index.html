@@ -270,6 +270,26 @@ table.cot tbody tr:last-child td{border-bottom:0}
 .prog{width:52px;height:6px;background:var(--line);border-radius:4px;overflow:hidden;display:inline-block;vertical-align:middle}
 .prog-in{height:100%;background:var(--leaf);border-radius:4px}
 .prog-t{font-size:10.5px;color:var(--muted);margin-left:5px;font-weight:700}
+/* ===== estoque ===== */
+.est-card{background:#fff;border:1px solid var(--line);border-radius:12px;margin-bottom:8px;overflow:hidden;box-shadow:0 1px 4px rgba(31,74,55,.04)}
+.est-card.sem-saldo{opacity:.55}
+.est-head{display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:pointer;transition:background .15s}
+.est-head:hover{background:var(--leaf-soft)}
+.est-info{flex:1;min-width:0}
+.est-nome{font-size:14px;font-weight:700;color:var(--ink);line-height:1.3}
+.est-meta{font-size:11.5px;color:var(--muted);margin-top:2px}
+.est-qtd{font-size:17px;font-weight:800;color:var(--leaf-dark);white-space:nowrap;text-align:right}
+.est-qtd span{display:block;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.est-qtd.zero{color:var(--muted)}
+.est-seta{color:var(--muted);font-size:13px;transition:transform .2s;flex-shrink:0}
+.est-seta.on{transform:rotate(180deg);color:var(--leaf)}
+.est-lojas{padding:0 14px 12px;display:flex;flex-wrap:wrap;gap:8px}
+.est-loja{flex:1;min-width:130px;background:var(--leaf-soft);border-radius:9px;padding:9px 11px}
+.est-loja span{display:block;font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;font-weight:700}
+.est-loja b{font-size:15px;color:var(--leaf-dark)}
+.est-loja.neg{background:#fbe6e0}
+.est-loja.neg b{color:#b23c1c}
+.est-vazio{font-size:12.5px;color:var(--muted);padding:4px 0}
 .mc-filtros{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
 .mc-fbtn{background:#fff;border:1.5px solid var(--line);color:var(--muted);padding:8px 16px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap}
 .mc-fbtn:hover{border-color:var(--leaf);color:var(--leaf-dark)}
@@ -379,6 +399,7 @@ body.login-aberto{overflow:hidden}
       <button class="tab" id="tabCotacao">Nova Cotação</button>
       <button class="tab" id="tabMinhas">Minhas Cotações</button>
       <button class="tab" id="tabCarteira">Carteira</button>
+      <button class="tab" id="tabEstoque">Estoque</button>
       <button class="tab" id="tabMargem" style="display:none">Margens & Vencimentos</button>
       <button class="tab" id="tabUsuarios" style="display:none">Usuários</button>
     </div>
@@ -638,6 +659,36 @@ body.login-aberto{overflow:hidden}
 
       <div id="cartResumo" class="cart-resumo"></div>
       <div id="cartList" class="mc-list"></div>
+    </div>
+  </main>
+</div>
+
+<div class="panel" id="estoqueView">
+  <main>
+    <div class="wrap">
+      <h2 class="section-title">Estoque físico</h2>
+      <div class="section-sub">Saldo consolidado de todas as lojas. Toque no produto para ver por loja.</div>
+
+      <div id="estImport" class="cart-import" style="display:none">
+        <div class="ci-titulo">Importar estoque (somente administrador)</div>
+        <div class="ci-desc">Exporte no SIAGRI o relatório <b>Fatu4181 - Composição do Estoque - Por Empresa</b> em Excel e selecione abaixo. A importação substitui o estoque anterior.</div>
+        <input type="file" id="estFile" accept=".xlsx,.xls">
+        <div id="estStatus" class="ci-status"></div>
+      </div>
+
+      <div class="ctrl-row" style="margin-bottom:12px">
+        <div class="search" style="flex:1;min-width:220px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <input id="estBusca" type="text" placeholder="Buscar produto ou código...">
+        </div>
+      </div>
+      <div class="mc-filtros">
+        <button class="mc-fbtn on" data-ef="com">Com saldo</button>
+        <button class="mc-fbtn" data-ef="todos">Todos</button>
+      </div>
+
+      <div id="estResumo" class="cart-resumo"></div>
+      <div id="estList" class="mc-list"></div>
     </div>
   </main>
 </div>
@@ -1287,6 +1338,7 @@ async function aoLogar(user){
   const tm=document.getElementById('tabMargem'); if(tm) tm.style.display = ehAdmin ? 'inline-block' : 'none';
   await carregarCotacoes();
   await carregarCarteira();
+  await carregarEstoque();
   renderMinhas && renderMinhas();
   // redesenha a lista de preços com as permissões do usuário (esconde produtos ocultos)
   try{ render(); }catch(e){}
@@ -2249,10 +2301,184 @@ document.getElementById('nuCriar') && (document.getElementById('nuCriar').onclic
   }finally{ btn.textContent=t; btn.disabled=false; }
 });
 
+/* ===================== ESTOQUE (SIAGRI) ===================== */
+let estoque=[];
+let estFiltro='com';
+let estBusca='';
+let estAberto={};   // produtos expandidos
+
+// nomes das lojas por código de empresa do SIAGRI
+const EMPRESAS={1:'Uberlândia',2:'Nova Ponte',3:'Capinópolis',4:'Araguari',5:'Matriz'};
+function nomeEmpresa(cod){ return EMPRESAS[cod] || ('Empresa '+cod); }
+
+async function carregarEstoque(){
+  if(!sbOk) return;
+  try{
+    const {data,error}=await sb.from('estoque').select('*');
+    if(error) throw error;
+    estoque=data||[];
+  }catch(e){ console.warn('carregarEstoque',e); estoque=[]; }
+}
+
+// agrupa por produto, somando as lojas
+function estoqueAgrupado(){
+  const m={};
+  estoque.forEach(l=>{
+    const k=l.produto_cod||l.produto_desc;
+    if(!m[k]) m[k]={cod:l.produto_cod, desc:l.produto_desc, unid:l.unidade, forn:l.fornecedor, total:0, lojas:{}};
+    const q=+l.quantidade||0;
+    m[k].total+=q;
+    const e=l.empresa||'?';
+    m[k].lojas[e]=(m[k].lojas[e]||0)+q;
+  });
+  return Object.values(m).sort((a,b)=>String(a.desc||'').localeCompare(String(b.desc||''),'pt-BR'));
+}
+
+function renderEstoque(){
+  const list=document.getElementById('estList');
+  const resumo=document.getElementById('estResumo');
+  if(!usuario){ list.innerHTML='<div class="mc-vazio">Faça login para ver o estoque.</div>'; return; }
+
+  const imp=document.getElementById('estImport');
+  if(imp) imp.style.display = ehAdmin ? 'block' : 'none';
+
+  if(!estoque.length){
+    list.innerHTML='<div class="mc-vazio">Nenhum estoque importado ainda.'+(ehAdmin?' Use o campo acima para importar o Excel do SIAGRI.':'')+'</div>';
+    resumo.innerHTML='';
+    return;
+  }
+
+  let itens=estoqueAgrupado();
+  const totalProdutos=itens.length;
+  const comSaldo=itens.filter(i=>i.total>0).length;
+
+  if(estFiltro==='com') itens=itens.filter(i=>i.total>0);
+  const q=norm(estBusca);
+  if(q) itens=itens.filter(i=>norm(i.desc||'').includes(q)||String(i.cod||'').includes(q)||norm(i.forn||'').includes(q));
+
+  const lojasAtivas=new Set();
+  estoque.forEach(l=>{ if((+l.quantidade||0)>0) lojasAtivas.add(l.empresa); });
+  resumo.innerHTML=
+    '<div><span>Produtos</span><b>'+totalProdutos+'</b></div>'+
+    '<div><span>Com saldo</span><b>'+comSaldo+'</b></div>'+
+    '<div><span>Lojas</span><b>'+lojasAtivas.size+'</b></div>'+
+    '<div class="cart-destaque"><span>Exibindo</span><b>'+itens.length+'</b></div>';
+
+  if(!itens.length){ list.innerHTML='<div class="mc-vazio">Nenhum produto encontrado.</div>'; return; }
+
+  list.innerHTML=itens.map(i=>{
+    const k=String(i.cod||i.desc);
+    const aberto=!!estAberto[k];
+    const temSaldo=i.total>0;
+    // detalhamento por loja (só as que têm saldo diferente de zero)
+    const lojas=Object.keys(i.lojas).filter(e=>Math.abs(i.lojas[e])>0.0001)
+      .sort((a,b)=>i.lojas[b]-i.lojas[a]);
+    const detalhe=aberto
+      ? '<div class="est-lojas">'+(lojas.length
+          ? lojas.map(e=>'<div class="est-loja'+(i.lojas[e]<0?' neg':'')+'"><span>'+esc(nomeEmpresa(+e))+'</span><b>'+brl(i.lojas[e])+' '+esc(i.unid||'')+'</b></div>').join('')
+          : '<div class="est-vazio">Sem saldo em nenhuma loja.</div>')+'</div>'
+      : '';
+    return '<div class="est-card'+(temSaldo?'':' sem-saldo')+'" data-k="'+esc(k)+'">'+
+      '<div class="est-head" data-tog="'+esc(k)+'">'+
+        '<div class="est-info"><div class="est-nome">'+esc(i.desc||'')+'</div>'+
+        '<div class="est-meta">Cód. '+esc(i.cod||'—')+(i.forn?(' · '+esc(i.forn)):'')+'</div></div>'+
+        '<div class="est-qtd'+(temSaldo?'':' zero')+'">'+brl(i.total)+'<span>'+esc(i.unid||'')+'</span></div>'+
+        '<span class="est-seta'+(aberto?' on':'')+'">▾</span>'+
+      '</div>'+detalhe+'</div>';
+  }).join('');
+
+  list.querySelectorAll('[data-tog]').forEach(h=>h.onclick=()=>{
+    const k=h.dataset.tog;
+    estAberto[k]=!estAberto[k];
+    renderEstoque();
+  });
+}
+
+document.querySelectorAll('#estoqueView .mc-fbtn').forEach(b=>{
+  b.onclick=()=>{ estFiltro=b.dataset.ef; document.querySelectorAll('#estoqueView .mc-fbtn').forEach(x=>x.classList.toggle('on',x===b)); renderEstoque(); };
+});
+document.getElementById('estBusca').oninput=e=>{ estBusca=e.target.value; renderEstoque(); };
+
+/* ---- importação do estoque ---- */
+function estStatus(tipo,msg){
+  const el=document.getElementById('estStatus');
+  if(el){ el.className='ci-status '+(tipo||''); el.textContent=msg||''; }
+}
+document.getElementById('estFile') && (document.getElementById('estFile').onchange=function(ev){
+  const f=ev.target.files&&ev.target.files[0];
+  if(!f) return;
+  if(!ehAdmin){ estStatus('err','Apenas o administrador pode importar o estoque.'); return; }
+  if(typeof XLSX==='undefined'){ estStatus('err','Leitor de planilha não carregou. Recarregue a página.'); return; }
+  estStatus('','Lendo planilha...');
+  const rd=new FileReader();
+  rd.onload=async function(e){
+    try{
+      const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:null});
+      if(!rows||rows.length<2){ estStatus('err','Planilha vazia.'); return; }
+      const H=rows[0].map(x=>x==null?'':String(x));
+      const c={
+        empresa:  acharCol(H,['empresa']),
+        cod:      acharCol(H,['codigo do produto']),
+        desc:     acharCol(H,['descricao do produto']),
+        unid:     acharCol(H,['unidade']),
+        ctrl:     acharCol(H,['controle de saldo'],true),
+        qtd:      acharCol(H,['quantidade']),
+        forn:     acharCol(H,['razao social'])
+      };
+      if(c.cod<0||c.qtd<0){ estStatus('err','Não reconheci o formato. Use o relatório Fatu4181 exportado em Excel.'); return; }
+
+      const V=(row,i)=> (i>=0 && row[i]!=null) ? row[i] : null;
+      const registros=[];
+      let ignoradas=0;
+      for(let r=1;r<rows.length;r++){
+        const row=rows[r]; if(!row) continue;
+        // IMPORTANTE: o relatório repete cada produto por tipo de movimentação.
+        // O saldo real está apenas nas linhas "000-Estoque calculado".
+        const ctrl=String(V(row,c.ctrl)||'');
+        if(!ctrl.startsWith('000')){ ignoradas++; continue; }
+        const cod=V(row,c.cod);
+        if(!cod) continue;
+        // a descrição vem com o código colado no fim: "PRODUTO&12345"
+        let desc=String(V(row,c.desc)||'').split('&')[0].trim();
+        registros.push({
+          empresa:String(V(row,c.empresa)||''),
+          produto_cod:String(cod),
+          produto_desc:desc,
+          unidade:String(V(row,c.unid)||''),
+          fornecedor:String(V(row,c.forn)||''),
+          quantidade:numero(V(row,c.qtd))
+        });
+      }
+      if(!registros.length){ estStatus('err','Nenhuma linha de estoque encontrada (procuro por "000-Estoque calculado").'); return; }
+
+      estStatus('','Enviando '+registros.length+' registro(s)...');
+      const del=await sb.from('estoque').delete().neq('id',-1);
+      if(del.error) throw del.error;
+      const LOTE=200;
+      let env=0;
+      for(let i=0;i<registros.length;i+=LOTE){
+        const fatia=registros.slice(i,i+LOTE);
+        const {error}=await sb.from('estoque').insert(fatia);
+        if(error) throw error;
+        env+=fatia.length;
+        estStatus('','Enviando... ('+env+'/'+registros.length+')');
+      }
+      await carregarEstoque();
+      renderEstoque();
+      const nprod=new Set(registros.map(x=>x.produto_cod)).size;
+      estStatus('ok','✓ Estoque atualizado: '+nprod+' produto(s). ('+ignoradas+' linhas de movimentação ignoradas)');
+      ev.target.value='';
+    }catch(err){ estStatus('err','Erro ao importar: '+(err&&err.message?err.message:err)); }
+  };
+  rd.readAsArrayBuffer(f);
+});
+
 function showTab(t){
   // proteção: abas restritas só para admin
   if((t==='margem'||t==='usuarios') && !ehAdmin){ t='list'; }
-  ['list','cotacao','minhas','margem','usuarios','carteira'].forEach(x=>{
+  ['list','cotacao','minhas','margem','usuarios','carteira','estoque'].forEach(x=>{
     const v=document.getElementById(x==='list'?'listView':x+'View');
     if(v){ if(x==='list') v.style.display=(t==='list')?'block':'none'; else v.classList.toggle('on',t===x); }
   });
@@ -2262,17 +2488,20 @@ function showTab(t){
   document.getElementById('tabMargem').classList.toggle('on',t==='margem');
   const tu=document.getElementById('tabUsuarios'); if(tu) tu.classList.toggle('on',t==='usuarios');
   const tc=document.getElementById('tabCarteira'); if(tc) tc.classList.toggle('on',t==='carteira');
+  const te=document.getElementById('tabEstoque'); if(te) te.classList.toggle('on',t==='estoque');
   if(t==='margem'){renderMargemFab();renderMargemProd();}
   if(t==='cotacao'){renderCot();}
   if(t==='minhas'){renderMinhas();}
   if(t==='usuarios'){renderUsuarios();}
   if(t==='carteira'){renderCarteira();}
+  if(t==='estoque'){renderEstoque();}
 }
 document.getElementById('tabList').onclick=()=>showTab('list');
 document.getElementById('tabCotacao').onclick=()=>showTab('cotacao');
 document.getElementById('tabMargem').onclick=()=>showTab('margem');
 document.getElementById('tabUsuarios').onclick=()=>showTab('usuarios');
 document.getElementById('tabCarteira').onclick=()=>showTab('carteira');
+document.getElementById('tabEstoque').onclick=()=>showTab('estoque');
 document.getElementById('q').oninput=e=>{state.q=e.target.value;render();};
 document.getElementById('fabSel').onchange=e=>{state.fab=e.target.value;render();};
 document.getElementById('sortSel').onchange=e=>{state.sort=e.target.value;render();};
