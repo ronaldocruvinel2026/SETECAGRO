@@ -7,6 +7,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 :root{--ink:#12211a;--paper:#f6f4ec;--card:#fff;--leaf:#2f6b4f;--leaf-dark:#1f4a37;--leaf-soft:#e5efe7;--gold:#c8952b;--gold-soft:#f6ecd4;--line:#e2ddce;--muted:#6d7a6f;--danger:#c0392b}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -339,7 +340,11 @@ body.login-aberto{overflow:hidden}
 .ped-modal{background:#fff;border-radius:12px;max-width:900px;width:100%;margin:16px 0;box-shadow:0 20px 60px rgba(0,0,0,.35);overflow:hidden}
 .ped-bar{display:flex;gap:10px;padding:14px 16px;background:var(--leaf-soft);border-bottom:1px solid var(--line);position:sticky;top:0}
 .ped-scroll{padding:18px;overflow-x:auto}
-.ped-doc{font-family:Arial,Helvetica,sans-serif;color:#111;font-size:12px;min-width:720px}
+.ped-doc{font-family:Arial,Helvetica,sans-serif;color:#111;font-size:12px;min-width:720px;width:100%;aspect-ratio:194/281;display:flex;flex-direction:column;box-sizing:border-box}
+/* a tabela de itens cresce para ocupar toda a altura livre da folha */
+.ped-doc .itens-wrap{flex:1 1 auto;display:flex;flex-direction:column;min-height:0}
+.ped-doc table.itens{flex:1 1 auto}
+.ped-doc table.itens tbody tr{height:auto}
 .ped-doc .top{display:flex;justify-content:space-between;align-items:stretch;border:2px solid #111;border-bottom:0}
 .ped-doc .brand{padding:10px 12px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:4px}
 .ped-doc .brand .ped-logo{width:190px;height:auto;display:block}
@@ -624,8 +629,7 @@ body.login-aberto{overflow:hidden}
 <div class="ped-bg" id="pedBg">
   <div class="ped-modal">
     <div class="ped-bar no-print">
-      <button class="btn" id="pedImprimir">Imprimir / Salvar PDF</button>
-      <button class="btn" id="pedCompartilhar">Compartilhar</button>
+      <button class="btn" id="pedCompartilhar">Compartilhar PDF</button>
       <button class="btn ghost" id="pedFechar">Fechar</button>
     </div>
     <div class="ped-scroll"><div id="pedContent"></div></div>
@@ -1734,9 +1738,11 @@ function imprimirPedido(id){
     const sub=(it.preco&&it.qtd)?it.preco*it.qtd:0;
     return '<tr><td class="c">'+(it.qtd||'')+'</td><td class="c">'+esc(it.unid||'LT')+'</td><td>'+esc(it.prod||'')+'</td><td>'+esc(it.cultura||'')+'</td><td class="r">'+(it.preco?brl(it.preco):'')+'</td><td class="r">'+(sub?brl(sub):'')+'</td></tr>';
   }).join('');
-  // linhas vazias para preencher a página como no modelo
-  let vazias=''; const min=12; for(let k=c.itens.length;k<min;k++){ vazias+='<tr><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td></tr>'; }
+  // linhas vazias para preencher a folha A4 inteira (sem espaços em branco embaixo)
+  let vazias=''; const min=18; for(let k=c.itens.length;k<min;k++){ vazias+='<tr><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td></tr>'; }
   const numero = c.numero || '—';
+  pedidoAtualNum = c.numero || null;
+  pedidoAtualCli = c.cliente || '';
   const L = dadosLoja(c.loja || meuLoja || LOJA_PADRAO);
   const pedidoHtml=
     '<div class="ped-doc" id="pedDoc">'+
@@ -1749,7 +1755,7 @@ function imprimirPedido(id){
       '<div class="row"><div class="cell" style="flex:2"><b>Nome</b>'+esc(c.cliente||'')+'</div><div class="cell" style="flex:1"><b>CPF / CNPJ</b>'+esc(c.cpf||'')+'</div><div class="cell" style="flex:1"><b>Consultor de Vendas</b>'+esc(c.consultorNome||'')+'</div></div>'+
       '<div class="row"><div class="cell" style="flex:2"><b>Fazenda</b>'+esc(c.fazenda||'')+'</div><div class="cell" style="flex:1"><b>Município / UF</b>'+esc(c.mun||'')+'</div><div class="cell" style="flex:1"><b>Vencimento</b>'+esc(venc)+'</div></div>'+
     '</div>'+
-    '<table class="itens"><thead><tr><th>Quantidade</th><th>Unid.</th><th>Produto</th><th>Cultura</th><th>Preço Unitário</th><th>Valor Total</th></tr></thead><tbody>'+linhas+vazias+'</tbody></table>'+
+    '<div class="itens-wrap"><table class="itens"><thead><tr><th>Quantidade</th><th>Unid.</th><th>Produto</th><th>Cultura</th><th>Preço Unitário</th><th>Valor Total</th></tr></thead><tbody>'+linhas+vazias+'</tbody></table></div>'+
     '<div class="tot"><span>TOTAL R$</span><span>'+brl(total)+'</span></div>'+
     '<div class="obs">AS MERCADORIAS CONSTANTES DESTE PEDIDO SE DESTINAM EXCLUSIVAMENTE ÀS ATIVIDADES AGRÍCOLAS OU PECUÁRIAS. Os preços se estendem por mercadorias postas em nossa loja, ficando a cargo do comprador as despesas de despacho, frete e carreto. Pedido válido somente após aprovação do Departamento de Crédito. UMA VEZ FATURADO, A VENDEDORA NÃO ACEITA DEVOLUÇÃO DE MERCADORIA.'+
       '<div class="assin">Assinatura do(a) Comprador(a) / Por extenso</div></div>'+
@@ -1791,48 +1797,63 @@ function imprimirPedido(id){
   bg.classList.add('on');
 }
 document.getElementById('pedFechar') && (document.getElementById('pedFechar').onclick=()=>document.getElementById('pedBg').classList.remove('on'));
-document.getElementById('pedImprimir') && (document.getElementById('pedImprimir').onclick=()=>{ document.body.classList.add('printing-ped'); window.print(); setTimeout(()=>document.body.classList.remove('printing-ped'),500); });
+let pedidoAtualNum=null, pedidoAtualCli='';
 document.getElementById('pedCompartilhar') && (document.getElementById('pedCompartilhar').onclick=async ()=>{
   const doc=document.getElementById('pedContent').querySelector('.ped-doc');
   if(!doc){ return; }
   const btn=document.getElementById('pedCompartilhar');
   const txtOrig=btn.textContent;
-  btn.textContent='Gerando...';
+  btn.textContent='Gerando PDF...';
   btn.disabled=true;
-  function baixarImagem(canvas){
+  // nome do arquivo = numero do pedido
+  const numTxt = pedidoAtualNum ? String(pedidoAtualNum) : 'sem-numero';
+  const nomeArq = 'Pedido '+numTxt+'.pdf';
+  const titulo = 'Pedido '+numTxt+(pedidoAtualCli?(' - '+pedidoAtualCli):'');
+  function baixarPdf(blob){
     try{
+      const url=URL.createObjectURL(blob);
       const a=document.createElement('a');
-      a.href=canvas.toDataURL('image/png');
-      a.download='pedido.png';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      alert('Imagem do pedido salva/baixada. Abra suas Fotos ou Arquivos e envie pelo WhatsApp, e-mail, etc.');
-    }catch(err){ alert('Não foi possível gerar a imagem: '+(err&&err.message?err.message:err)); }
+      a.href=url; a.download=nomeArq;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(()=>URL.revokeObjectURL(url),3000);
+      alert('PDF "'+nomeArq+'" salvo. Abra seus Arquivos/Downloads para enviar por WhatsApp, e-mail, etc.');
+    }catch(err){ alert('Não foi possível salvar o PDF: '+(err&&err.message?err.message:err)); }
   }
   try{
-    if(typeof html2canvas==='undefined'){ alert('O compartilhar precisa de internet para carregar na primeira vez. Conecte-se e tente de novo.'); return; }
+    if(typeof html2canvas==='undefined' || !window.jspdf){
+      alert('O compartilhar precisa de internet para carregar na primeira vez. Conecte-se e tente de novo.');
+      return;
+    }
+    // captura o documento do pedido (o painel de margem fica de fora)
     const canvas=await html2canvas(doc,{scale:2,backgroundColor:'#ffffff',useCORS:true});
+    const img=canvas.toDataURL('image/jpeg',0.92);
+    // monta o PDF em A4 retrato, ajustando a imagem à largura da página
+    const {jsPDF}=window.jspdf;
+    const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+    const pageW=pdf.internal.pageSize.getWidth();
+    const pageH=pdf.internal.pageSize.getHeight();
+    const margem=8;
+    // o documento já é montado na proporção da A4, então preenche a folha inteira
+    const imgW=pageW-margem*2;
+    const imgH=pageH-margem*2;
+    const x=(pageW-imgW)/2;
+    pdf.setProperties({title:titulo, subject:titulo, creator:'Setec Agro'});
+    pdf.addImage(img,'JPEG',x,margem,imgW,imgH);
+    const blob=pdf.output('blob');
     let arquivo=null;
-    try{
-      const blob=await new Promise(res=>canvas.toBlob(res,'image/png'));
-      if(blob) arquivo=new File([blob],'pedido.png',{type:'image/png'});
-    }catch(_){}
-    // tentar compartilhamento nativo com arquivo
+    try{ arquivo=new File([blob],nomeArq,{type:'application/pdf'}); }catch(_){}
     if(arquivo && navigator.canShare && navigator.canShare({files:[arquivo]})){
       try{
-        await navigator.share({files:[arquivo], title:'Pedido Setec'});
+        await navigator.share({files:[arquivo], title:titulo});
       }catch(e){
-        // se o usuário cancelou, não faz nada; se o navegador bloqueou, baixa a imagem
-        if(e && (e.name==='AbortError')){ /* cancelou */ }
-        else { baixarImagem(canvas); }
+        if(e && e.name==='AbortError'){ /* usuário cancelou */ }
+        else { baixarPdf(blob); }
       }
     }else{
-      // navegador sem suporte a compartilhar arquivo => baixa a imagem
-      baixarImagem(canvas);
+      baixarPdf(blob);
     }
   }catch(e){
-    alert('Não foi possível preparar o compartilhamento: '+(e&&e.message?e.message:e));
+    alert('Não foi possível gerar o PDF: '+(e&&e.message?e.message:e));
   }finally{
     btn.textContent=txtOrig;
     btn.disabled=false;
