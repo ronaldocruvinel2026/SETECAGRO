@@ -262,6 +262,16 @@ tr.mg-semcusto{background:#fbfaf6;color:var(--muted)}
 .cart-import input[type=file]{font-size:13px;font-family:inherit}
 .ci-status{margin-top:8px;font-size:12.5px;font-weight:600;color:var(--muted)}
 .ci-status.ok{color:var(--leaf-dark)} .ci-status.err{color:#b23c1c}
+.imp-botoes{display:flex;gap:10px;flex-wrap:wrap}
+.imp-btn{display:inline-flex;align-items:center;justify-content:center;padding:11px 18px;border-radius:10px;font-size:13.5px;font-weight:800;cursor:pointer;transition:all .15s;border:1.5px solid;white-space:nowrap}
+.imp-btn.setec{background:var(--leaf-dark);border-color:var(--leaf-dark);color:#fff}
+.imp-btn.setec:hover{background:var(--leaf);border-color:var(--leaf)}
+.imp-btn.jsm{background:#fff;border-color:var(--gold);color:#8a6d1f}
+.imp-btn.jsm:hover{background:var(--gold-soft)}
+.filtro-sep{width:1px;background:var(--line);margin:0 4px;align-self:stretch}
+.tag-origem{display:inline-block;margin-left:8px;font-size:9.5px;font-weight:800;padding:2px 7px;border-radius:5px;letter-spacing:.4px;vertical-align:middle}
+.tag-origem.setec{background:var(--leaf-soft);color:var(--leaf-dark)}
+.tag-origem.jsm{background:var(--gold-soft);color:#8a6d1f}
 .cart-resumo{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px}
 .cart-resumo>div{flex:1;min-width:130px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 12px}
 .cart-resumo span{display:block;font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;font-weight:700}
@@ -662,8 +672,17 @@ body.login-aberto{overflow:hidden}
 
       <div id="cartImport" class="cart-import" style="display:none">
         <div class="ci-titulo">Importar carteira (somente administrador)</div>
-        <div class="ci-desc">Exporte no SIAGRI o relatório <b>Fatu41901 - Carteira Pedidos de Venda - Analítico</b> em Excel e selecione o arquivo abaixo. A importação substitui a carteira anterior.</div>
-        <input type="file" id="cartFile" accept=".xlsx,.xls">
+        <div class="ci-desc">Exporte no SIAGRI o relatório <b>Fatu41901 - Carteira Pedidos de Venda - Analítico</b> em Excel. Escolha a empresa correspondente: importar uma <b>não apaga</b> os dados da outra.</div>
+        <div class="imp-botoes">
+          <label class="imp-btn setec">
+            <span>Importar carteira SETEC</span>
+            <input type="file" id="cartFileSetec" accept=".xlsx,.xls" hidden>
+          </label>
+          <label class="imp-btn jsm">
+            <span>Importar carteira JSM</span>
+            <input type="file" id="cartFileJsm" accept=".xlsx,.xls" hidden>
+          </label>
+        </div>
         <div id="cartStatus" class="ci-status"></div>
       </div>
 
@@ -678,6 +697,10 @@ body.login-aberto{overflow:hidden}
         <button class="mc-fbtn on" data-cf="aberto">Em aberto</button>
         <button class="mc-fbtn" data-cf="todos">Todos</button>
         <button class="mc-fbtn" data-cf="entregue">Entregues</button>
+        <span class="filtro-sep"></span>
+        <button class="mc-fbtn on" data-corig="TODAS">Ambas</button>
+        <button class="mc-fbtn" data-corig="SETEC">SETEC</button>
+        <button class="mc-fbtn" data-corig="JSM">JSM</button>
       </div>
 
       <div id="cartResumo" class="cart-resumo"></div>
@@ -694,8 +717,17 @@ body.login-aberto{overflow:hidden}
 
       <div id="estImport" class="cart-import" style="display:none">
         <div class="ci-titulo">Importar estoque (somente administrador)</div>
-        <div class="ci-desc">Exporte no SIAGRI o relatório <b>Fatu401 - Posição Diária do Estoque</b> (ou o Fatu4181) em Excel e selecione abaixo. A importação substitui o estoque anterior.</div>
-        <input type="file" id="estFile" accept=".xlsx,.xls">
+        <div class="ci-desc">Exporte no SIAGRI o relatório <b>Fatu401 - Posição Diária do Estoque</b> (ou o Fatu4181) em Excel. Escolha a empresa correspondente: importar uma <b>não apaga</b> os dados da outra.</div>
+        <div class="imp-botoes">
+          <label class="imp-btn setec">
+            <span>Importar estoque SETEC</span>
+            <input type="file" id="estFileSetec" accept=".xlsx,.xls" hidden>
+          </label>
+          <label class="imp-btn jsm">
+            <span>Importar estoque JSM</span>
+            <input type="file" id="estFileJsm" accept=".xlsx,.xls" hidden>
+          </label>
+        </div>
         <div id="estStatus" class="ci-status"></div>
       </div>
 
@@ -708,6 +740,10 @@ body.login-aberto{overflow:hidden}
       <div class="mc-filtros">
         <button class="mc-fbtn on" data-ef="com">Com saldo</button>
         <button class="mc-fbtn" data-ef="todos">Todos</button>
+        <span class="filtro-sep"></span>
+        <button class="mc-fbtn on" data-eorig="TODAS">Ambas</button>
+        <button class="mc-fbtn" data-eorig="SETEC">SETEC</button>
+        <button class="mc-fbtn" data-eorig="JSM">JSM</button>
       </div>
 
       <div id="estResumo" class="cart-resumo"></div>
@@ -2054,6 +2090,7 @@ document.getElementById('usrBusca').oninput=e=>{ usrBuscaTxt=e.target.value; ren
 /* ===================== CARTEIRA DE PEDIDOS (SIAGRI) ===================== */
 let carteira=[];           // linhas (itens) da carteira
 let cartFiltro='aberto';
+let cartOrigem='TODAS';
 let cartBusca='';
 let cartVend='ALL';
 let meuVendedorSiagri=null; // nome do vendedor no SIAGRI vinculado ao usuário
@@ -2108,6 +2145,8 @@ function renderCarteira(){
     if(cartVend!=='ALL') linhas=linhas.filter(l=>l.vendedor_nome===cartVend);
   }else{ selV.style.display='none'; }
 
+  // filtro por empresa
+  if(cartOrigem!=='TODAS') linhas=linhas.filter(l=>(l.origem||'SETEC')===cartOrigem);
   // filtro de situação
   if(cartFiltro==='aberto') linhas=linhas.filter(l=>(+l.saldo||0)>0);
   else if(cartFiltro==='entregue') linhas=linhas.filter(l=>(+l.saldo||0)<=0);
@@ -2166,7 +2205,7 @@ function renderCarteira(){
     }).join('');
     return '<div class="cart-card '+(aberto?'is-aberto':'is-ok')+'">'+
       '<div class="cart-head">'+
-        '<div><div class="cart-cli">'+esc(p.cliente_nome||'')+'</div>'+
+        '<div><div class="cart-cli">'+esc(p.cliente_nome||'')+(p.origem?('<span class="tag-origem '+(p.origem==='JSM'?'jsm':'setec')+'">'+esc(p.origem)+'</span>'):'')+'</div>'+
         '<div class="cart-meta">Pedido <b>'+esc(p.pedido||'')+'</b>'+(p.propriedade?(' · '+esc(p.propriedade)):'')+(dt?(' · Emissão '+dt):'')+(venc?(' · Venc. '+venc):'')+'</div>'+
         ((ehAdmin||meuPapel==='gerente')?('<div class="cart-vend">Vendedor: '+esc(p.vendedor_nome||'—')+'</div>'):'')+'</div>'+
         '<div class="cart-vals"><div class="cv-tot">R$ '+brl(vTot)+'</div>'+
@@ -2178,8 +2217,11 @@ function renderCarteira(){
 }
 
 /* filtros e busca */
-document.querySelectorAll('#carteiraView .mc-fbtn').forEach(b=>{
-  b.onclick=()=>{ cartFiltro=b.dataset.cf; document.querySelectorAll('#carteiraView .mc-fbtn').forEach(x=>x.classList.toggle('on',x===b)); renderCarteira(); };
+document.querySelectorAll('#carteiraView [data-cf]').forEach(b=>{
+  b.onclick=()=>{ cartFiltro=b.dataset.cf; document.querySelectorAll('#carteiraView [data-cf]').forEach(x=>x.classList.toggle('on',x===b)); renderCarteira(); };
+});
+document.querySelectorAll('#carteiraView [data-corig]').forEach(b=>{
+  b.onclick=()=>{ cartOrigem=b.dataset.corig; document.querySelectorAll('#carteiraView [data-corig]').forEach(x=>x.classList.toggle('on',x===b)); renderCarteira(); };
 });
 document.getElementById('cartBusca').oninput=e=>{ cartBusca=e.target.value; renderCarteira(); };
 document.getElementById('cartVendFiltro').onchange=e=>{ cartVend=e.target.value; renderCarteira(); };
@@ -2226,7 +2268,7 @@ function numero(v){
   return isNaN(n)?0:n;
 }
 
-document.getElementById('cartFile') && (document.getElementById('cartFile').onchange=function(ev){
+function importarCarteira(ev, origem){
   const f=ev.target.files&&ev.target.files[0];
   if(!f) return;
   if(!ehAdmin){ cartStatus('err','Apenas o administrador pode importar a carteira.'); return; }
@@ -2303,14 +2345,15 @@ document.getElementById('cartFile') && (document.getElementById('cartFile').onch
           saldo:numero(V(row,c.saldo)),
           total:numero(V(row,c.pedida))*numero(V(row,c.unitario)),
           margem_pct:numero(V(row,c.margem)),
-          ciclo:String(V(row,c.ciclo)||'')
+          ciclo:String(V(row,c.ciclo)||''),
+          origem:origem
         });
       }
       if(!registros.length){ cartStatus('err','Nenhuma linha de produto encontrada na planilha.'); return; }
 
-      cartStatus('','Enviando '+registros.length+' item(ns) para a nuvem...');
-      // substitui a carteira anterior
-      const del=await sb.from('carteira').delete().neq('id',-1);
+      cartStatus('','Enviando '+registros.length+' item(ns) da '+origem+'...');
+      // substitui apenas os dados desta empresa, preservando a outra
+      const del=await sb.from('carteira').delete().eq('origem',origem);
       if(del.error) throw del.error;
       const LOTE=200;
       let enviados=0;
@@ -2324,14 +2367,16 @@ document.getElementById('cartFile') && (document.getElementById('cartFile').onch
       await carregarCarteira();
       renderCarteira();
       const nPed=new Set(registros.map(x=>x.pedido)).size;
-      cartStatus('ok','✓ Carteira atualizada: '+registros.length+' itens em '+nPed+' pedido(s).');
+      cartStatus('ok','✓ Carteira '+origem+' atualizada: '+registros.length+' itens em '+nPed+' pedido(s).');
       ev.target.value='';
     }catch(err){
       cartStatus('err','Erro ao importar: '+(err&&err.message?err.message:err));
     }
   };
   rd.readAsArrayBuffer(f);
-});
+}
+const _cfs=document.getElementById('cartFileSetec'); if(_cfs) _cfs.onchange=function(ev){ importarCarteira(ev,'SETEC'); };
+const _cfj=document.getElementById('cartFileJsm');   if(_cfj) _cfj.onchange=function(ev){ importarCarteira(ev,'JSM'); };
 
 /* ---- cadastro de usuário pelo painel de Usuários (só admin) ---- */
 function nuMsg(tipo,txt){
@@ -2414,6 +2459,7 @@ document.getElementById('nuCriar') && (document.getElementById('nuCriar').onclic
 /* ===================== ESTOQUE (SIAGRI) ===================== */
 let estoque=[];
 let estFiltro='com';
+let estOrigem='TODAS';
 let estBusca='';
 let estAberto={};   // produtos expandidos
 
@@ -2432,16 +2478,19 @@ async function carregarEstoque(){
 }
 
 // agrupa por produto, somando as lojas
-function estoqueAgrupado(){
+function estoqueAgrupado(filtroOrigem){
   const m={};
   estoque.forEach(l=>{
+    if(filtroOrigem && filtroOrigem!=='TODAS' && (l.origem||'SETEC')!==filtroOrigem) return;
     const k=l.produto_cod||l.produto_desc;
     if(!m[k]) m[k]={cod:l.produto_cod, desc:l.produto_desc, unid:l.unidade, forn:l.fornecedor, total:0, lojas:{}};
     const q=+l.quantidade||0;
     m[k].total+=q;
     // agrupa pelo NOME da loja: códigos diferentes podem ser a mesma unidade
     // (ex.: 1 e 10 = Uberlândia Matriz), então os saldos são somados.
-    const nome=nomeEmpresa(+l.empresa) || ('Empresa '+l.empresa);
+    // Quando há duas empresas, o nome recebe o sufixo para não misturar.
+    const orig=(l.origem||'SETEC');
+    const nome=(nomeEmpresa(+l.empresa) || ('Empresa '+l.empresa))+(orig==='JSM'?' · JSM':'');
     m[k].lojas[nome]=(m[k].lojas[nome]||0)+q;
   });
   return Object.values(m).sort((a,b)=>String(a.desc||'').localeCompare(String(b.desc||''),'pt-BR'));
@@ -2461,7 +2510,7 @@ function renderEstoque(){
     return;
   }
 
-  let itens=estoqueAgrupado();
+  let itens=estoqueAgrupado(estOrigem);
   const totalProdutos=itens.length;
   const comSaldo=itens.filter(i=>i.total>0).length;
 
@@ -2507,8 +2556,11 @@ function renderEstoque(){
   });
 }
 
-document.querySelectorAll('#estoqueView .mc-fbtn').forEach(b=>{
-  b.onclick=()=>{ estFiltro=b.dataset.ef; document.querySelectorAll('#estoqueView .mc-fbtn').forEach(x=>x.classList.toggle('on',x===b)); renderEstoque(); };
+document.querySelectorAll('#estoqueView [data-ef]').forEach(b=>{
+  b.onclick=()=>{ estFiltro=b.dataset.ef; document.querySelectorAll('#estoqueView [data-ef]').forEach(x=>x.classList.toggle('on',x===b)); renderEstoque(); };
+});
+document.querySelectorAll('#estoqueView [data-eorig]').forEach(b=>{
+  b.onclick=()=>{ estOrigem=b.dataset.eorig; document.querySelectorAll('#estoqueView [data-eorig]').forEach(x=>x.classList.toggle('on',x===b)); renderEstoque(); };
 });
 document.getElementById('estBusca').oninput=e=>{ estBusca=e.target.value; renderEstoque(); };
 
@@ -2517,7 +2569,7 @@ function estStatus(tipo,msg){
   const el=document.getElementById('estStatus');
   if(el){ el.className='ci-status '+(tipo||''); el.textContent=msg||''; }
 }
-document.getElementById('estFile') && (document.getElementById('estFile').onchange=function(ev){
+function importarEstoque(ev, origem){
   const f=ev.target.files&&ev.target.files[0];
   if(!f) return;
   if(!ehAdmin){ estStatus('err','Apenas o administrador pode importar o estoque.'); return; }
@@ -2582,13 +2634,15 @@ document.getElementById('estFile') && (document.getElementById('estFile').onchan
           produto_desc:desc,
           unidade:String(V(row,c.unid)||''),
           fornecedor:c.forn>=0?String(V(row,c.forn)||''):'',
-          quantidade:numero(V(row,c.qtd))
+          quantidade:numero(V(row,c.qtd)),
+          origem:origem
         });
       }
       if(!registros.length){ estStatus('err','Nenhuma linha de estoque encontrada na planilha.'); return; }
 
-      estStatus('','Enviando '+registros.length+' registro(s)...');
-      const del=await sb.from('estoque').delete().neq('id',-1);
+      estStatus('','Enviando '+registros.length+' registro(s) da '+origem+'...');
+      // substitui apenas os dados desta empresa, preservando a outra
+      const del=await sb.from('estoque').delete().eq('origem',origem);
       if(del.error) throw del.error;
       const LOTE=200;
       let env=0;
@@ -2602,12 +2656,14 @@ document.getElementById('estFile') && (document.getElementById('estFile').onchan
       await carregarEstoque();
       renderEstoque();
       const nprod=new Set(registros.map(x=>x.produto_cod)).size;
-      estStatus('ok','✓ Estoque atualizado: '+nprod+' produto(s) em '+(new Set(registros.map(x=>x.empresa))).size+' loja(s).'+(ignoradas?(' ('+ignoradas+' linhas de movimentação ignoradas)'):''));
+      estStatus('ok','✓ Estoque '+origem+' atualizado: '+nprod+' produto(s) em '+(new Set(registros.map(x=>x.empresa))).size+' loja(s).'+(ignoradas?(' ('+ignoradas+' linhas ignoradas)'):''));
       ev.target.value='';
     }catch(err){ estStatus('err','Erro ao importar: '+(err&&err.message?err.message:err)); }
   };
   rd.readAsArrayBuffer(f);
-});
+}
+const _efs=document.getElementById('estFileSetec'); if(_efs) _efs.onchange=function(ev){ importarEstoque(ev,'SETEC'); };
+const _efj=document.getElementById('estFileJsm');   if(_efj) _efj.onchange=function(ev){ importarEstoque(ev,'JSM'); };
 
 function showTab(t){
   // proteção: abas restritas só para admin
