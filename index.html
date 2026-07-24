@@ -694,7 +694,7 @@ body.login-aberto{overflow:hidden}
 
       <div id="estImport" class="cart-import" style="display:none">
         <div class="ci-titulo">Importar estoque (somente administrador)</div>
-        <div class="ci-desc">Exporte no SIAGRI o relatório <b>Fatu4181 - Composição do Estoque - Por Empresa</b> em Excel e selecione abaixo. A importação substitui o estoque anterior.</div>
+        <div class="ci-desc">Exporte no SIAGRI o relatório <b>Fatu401 - Posição Diária do Estoque</b> (ou o Fatu4181) em Excel e selecione abaixo. A importação substitui o estoque anterior.</div>
         <input type="file" id="estFile" accept=".xlsx,.xls">
         <div id="estStatus" class="ci-status"></div>
       </div>
@@ -2418,7 +2418,8 @@ let estBusca='';
 let estAberto={};   // produtos expandidos
 
 // nomes das lojas por código de empresa do SIAGRI
-const EMPRESAS={1:'Uberlândia Matriz',2:'Uberlândia Barracão',3:'Araguari',4:'Capinópolis',5:'Nova Ponte'};
+const EMPRESAS={1:'Uberlândia Matriz',2:'Uberlândia Barracão',3:'Araguari',4:'Capinópolis',5:'Nova Ponte',
+  10:'Uberlândia Matriz',11:'Araguari',12:'Capinópolis',13:'Nova Ponte'};
 function nomeEmpresa(cod){ return EMPRESAS[cod] || ('Empresa '+cod); }
 
 async function carregarEstoque(){
@@ -2438,8 +2439,10 @@ function estoqueAgrupado(){
     if(!m[k]) m[k]={cod:l.produto_cod, desc:l.produto_desc, unid:l.unidade, forn:l.fornecedor, total:0, lojas:{}};
     const q=+l.quantidade||0;
     m[k].total+=q;
-    const e=l.empresa||'?';
-    m[k].lojas[e]=(m[k].lojas[e]||0)+q;
+    // agrupa pelo NOME da loja: códigos diferentes podem ser a mesma unidade
+    // (ex.: 1 e 10 = Uberlândia Matriz), então os saldos são somados.
+    const nome=nomeEmpresa(+l.empresa) || ('Empresa '+l.empresa);
+    m[k].lojas[nome]=(m[k].lojas[nome]||0)+q;
   });
   return Object.values(m).sort((a,b)=>String(a.desc||'').localeCompare(String(b.desc||''),'pt-BR'));
 }
@@ -2467,7 +2470,7 @@ function renderEstoque(){
   if(q) itens=itens.filter(i=>norm(i.desc||'').includes(q)||String(i.cod||'').includes(q)||norm(i.forn||'').includes(q));
 
   const lojasAtivas=new Set();
-  estoque.forEach(l=>{ if((+l.quantidade||0)>0) lojasAtivas.add(l.empresa); });
+  estoque.forEach(l=>{ if((+l.quantidade||0)>0) lojasAtivas.add(nomeEmpresa(+l.empresa)); });
   resumo.innerHTML=
     '<div><span>Produtos</span><b>'+totalProdutos+'</b></div>'+
     '<div><span>Com saldo</span><b>'+comSaldo+'</b></div>'+
@@ -2485,7 +2488,7 @@ function renderEstoque(){
       .sort((a,b)=>i.lojas[b]-i.lojas[a]);
     const detalhe=aberto
       ? '<div class="est-lojas">'+(lojas.length
-          ? lojas.map(e=>'<div class="est-loja'+(i.lojas[e]<0?' neg':'')+'"><span>'+esc(nomeEmpresa(+e))+'</span><b>'+brl(i.lojas[e])+' '+esc(i.unid||'')+'</b></div>').join('')
+          ? lojas.map(e=>'<div class="est-loja'+(i.lojas[e]<0?' neg':'')+'"><span>'+esc(e)+'</span><b>'+brl(i.lojas[e])+' '+esc(i.unid||'')+'</b></div>').join('')
           : '<div class="est-vazio">Sem saldo em nenhuma loja.</div>')+'</div>'
       : '';
     return '<div class="est-card'+(temSaldo?'':' sem-saldo')+'" data-k="'+esc(k)+'">'+
@@ -2528,40 +2531,61 @@ document.getElementById('estFile') && (document.getElementById('estFile').onchan
       const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:null});
       if(!rows||rows.length<2){ estStatus('err','Planilha vazia.'); return; }
       const H=rows[0].map(x=>x==null?'':String(x));
-      const c={
-        empresa:  acharCol(H,['empresa']),
-        cod:      acharCol(H,['codigo do produto']),
-        desc:     acharCol(H,['descricao do produto']),
-        unid:     acharCol(H,['unidade']),
-        ctrl:     acharCol(H,['controle de saldo'],true),
-        qtd:      acharCol(H,['quantidade']),
-        forn:     acharCol(H,['razao social'])
+      // Dois formatos são aceitos:
+      //  - Fatu401 "Posição Diária do Estoque": 4 colunas, a quantidade vem no campo
+      //    rotulado "Qtde mínima compra" (o SIAGRI reaproveita esse rótulo).
+      //  - Fatu4181 "Composição do Estoque": muitas colunas, com "Controle de saldo",
+      //    onde só as linhas "000-Estoque calculado" trazem o saldo real.
+      const cCtrl=acharCol(H,['controle de saldo'],true);
+      const formatoDiario = cCtrl<0;
+      const c = formatoDiario ? {
+        empresa: acharCol(H,['codigo da empresa','empresa']),
+        cod:     acharCol(H,['codigo do produto']),
+        desc:    acharCol(H,['descricao do produto']),
+        unid:    acharCol(H,['abreviatura da unidade','unidade']),
+        qtd:     acharCol(H,['qtde minima compra','quantidade','saldo','estoque']),
+        forn:    acharCol(H,['razao social','fabricante']),
+        ctrl:    -1
+      } : {
+        empresa: acharCol(H,['empresa']),
+        cod:     acharCol(H,['codigo do produto']),
+        desc:    acharCol(H,['descricao do produto']),
+        unid:    acharCol(H,['unidade']),
+        ctrl:    cCtrl,
+        qtd:     acharCol(H,['quantidade']),
+        forn:    acharCol(H,['razao social'])
       };
-      if(c.cod<0||c.qtd<0){ estStatus('err','Não reconheci o formato. Use o relatório Fatu4181 exportado em Excel.'); return; }
+      if(c.desc<0||c.qtd<0){ estStatus('err','Não reconheci o formato. Use o relatório Fatu401 (Posição Diária do Estoque) ou Fatu4181 exportado em Excel.'); return; }
 
       const V=(row,i)=> (i>=0 && row[i]!=null) ? row[i] : null;
       const registros=[];
       let ignoradas=0;
       for(let r=1;r<rows.length;r++){
         const row=rows[r]; if(!row) continue;
-        // IMPORTANTE: o relatório repete cada produto por tipo de movimentação.
-        // O saldo real está apenas nas linhas "000-Estoque calculado".
-        const ctrl=String(V(row,c.ctrl)||'');
-        if(!ctrl.startsWith('000')){ ignoradas++; continue; }
-        const cod=V(row,c.cod);
-        if(!cod) continue;
-        // a descrição vem com o código colado no fim: "PRODUTO&12345"
-        let desc=String(V(row,c.desc)||'').split('&')[0].trim();
+        // no formato Fatu4181 o saldo real está apenas nas linhas "000-Estoque calculado"
+        if(!formatoDiario){
+          const ctrl=String(V(row,c.ctrl)||'');
+          if(!ctrl.startsWith('000')){ ignoradas++; continue; }
+        }
+        const descBruta=V(row,c.desc);
+        const codBruto=c.cod>=0?V(row,c.cod):null;
+        if(!descBruta && !codBruto) continue;
+        // a descrição pode vir com o código colado no fim: "PRODUTO&12345"
+        const partes=String(descBruta||'').split('&');
+        const desc=partes[0].trim();
+        // sem coluna de código, usa o que vier depois do "&" ou a própria descrição como chave
+        const cod = codBruto ? String(codBruto) : (partes[1] ? partes[1].trim() : desc);
+        if(!desc) continue;
         registros.push({
           empresa:String(V(row,c.empresa)||''),
-          produto_cod:String(cod),
+          produto_cod:cod,
           produto_desc:desc,
           unidade:String(V(row,c.unid)||''),
-          fornecedor:String(V(row,c.forn)||''),
+          fornecedor:c.forn>=0?String(V(row,c.forn)||''):'',
           quantidade:numero(V(row,c.qtd))
         });
       }
-      if(!registros.length){ estStatus('err','Nenhuma linha de estoque encontrada (procuro por "000-Estoque calculado").'); return; }
+      if(!registros.length){ estStatus('err','Nenhuma linha de estoque encontrada na planilha.'); return; }
 
       estStatus('','Enviando '+registros.length+' registro(s)...');
       const del=await sb.from('estoque').delete().neq('id',-1);
@@ -2578,7 +2602,7 @@ document.getElementById('estFile') && (document.getElementById('estFile').onchan
       await carregarEstoque();
       renderEstoque();
       const nprod=new Set(registros.map(x=>x.produto_cod)).size;
-      estStatus('ok','✓ Estoque atualizado: '+nprod+' produto(s). ('+ignoradas+' linhas de movimentação ignoradas)');
+      estStatus('ok','✓ Estoque atualizado: '+nprod+' produto(s) em '+(new Set(registros.map(x=>x.empresa))).size+' loja(s).'+(ignoradas?(' ('+ignoradas+' linhas de movimentação ignoradas)'):''));
       ev.target.value='';
     }catch(err){ estStatus('err','Erro ao importar: '+(err&&err.message?err.message:err)); }
   };
